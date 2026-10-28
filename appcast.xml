@@ -1,0 +1,16 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Jot</title>
+        <item>
+            <title>0.1.0</title>
+            <pubDate>Wed, 28 Oct 2026 18:09:54 +0800</pubDate>
+            <sparkle:version>1</sparkle:version>
+            <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h2>Jot 0.1.0</h2><ul><li>全新名称 Jot：七页彩色便签、菜单栏小窗和本机自动保存。</li><li>支持 Markdown 快捷输入、待办清单、全文选择、查找与导出。</li><li>本机原有便签、设置和完整备份继续兼容，无需手动搬移数据。</li></ul><p>Jot 从 0.1.0 开始独立发布；从旧版迁移请下载新版安装包。当前仍为未经 Apple Developer ID 签名及 Apple 公证的预览版。</p>
+]]></description>
+            <enclosure url="https://wasdtornado.github.io/Jot/downloads/Jot-0.1.0-preview.dmg" length="2125469" type="application/octet-stream" sparkle:edSignature="H6qBima5f79MPmiLMjllku+5vmXtiaNJ+VcBG1J0TYOwIELdadnlqlNnzgoM41zB+TQoXO6v3GbWd1keCFr3Cw=="/>
+        </item>
+    </channel>
+</rss>

@@ -1,0 +1,33 @@
+/* 安装说明沿用浮游的纸色与文字层级，状态说明始终可见。 */
+.preview-label{display:inline-block;width:fit-content;padding:7px 12px;border:1px solid #d3c8a4;border-radius:999px;background:#f3edda;color:#66552a;font-size:12px;line-height:1.5}
+.get-action .preview-label{margin-bottom:14px}
+.get-action .release{display:block;width:fit-content}
+.install-overview{padding:48px 0 70px;border-top:1px solid var(--line)}
+.install-overview h2{font-size:clamp(23px,3vw,34px);margin:12px 0}
+.install-overview>div>p:last-child{font-size:13px;color:var(--muted)}
+.install-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px;list-style:none;counter-reset:install;padding:0;margin:30px 0}
+.install-steps>li{counter-increment:install;min-width:0}
+.install-steps>li:before{content:"0" counter(install);display:block;font-size:12px;letter-spacing:.1em;color:var(--muted);margin-bottom:12px}
+.install-steps strong{font-size:16px;font-weight:550;line-height:1.6}
+.install-steps p{font-size:14px;line-height:1.9;color:var(--muted);margin:9px 0 0}
+.install-link,.download-links a,.install-note a,.download-section .faq a{font-size:13px;text-decoration:underline;text-underline-offset:4px}
+.download-main{max-width:1000px}
+.download-intro{padding:65px 0 60px;text-align:center}
+.download-intro>img{display:block;margin:0 auto 24px}
+.download-intro .eyebrow{justify-content:center}
+.download-intro h1{font-size:clamp(30px,4.5vw,52px);line-height:1.3;letter-spacing:-.04em;margin:16px 0}
+.download-lede{font-size:16px;color:var(--muted);margin-bottom:24px}
+.preview-description{font-size:14px;line-height:1.8;color:var(--muted);margin:16px auto 24px;max-width:600px}
+.download-button{display:inline-flex}
+.download-meta{font-size:12px;color:var(--muted);margin:14px 0 20px}
+.download-links{display:flex;justify-content:center;gap:22px;flex-wrap:wrap}
+.download-section{padding:42px 0;border-top:1px solid var(--line);scroll-margin-top:32px}
+.download-section h2{font-size:clamp(23px,3vw,30px);line-height:1.45;margin:12px 0 20px}
+.download-section>p,.permission-steps{font-size:15px;line-height:1.9;color:var(--muted)}
+.permission-steps{padding-left:24px;margin:24px 0}
+.permission-steps li{padding-left:6px;margin:10px 0}
+.download-section .install-note{font-size:13px;padding:18px 20px;border-left:2px solid #92a37e;background:#eef1e7}
+.install-note a{display:inline-block;margin-top:8px}
+.download-section .faq{margin-bottom:24px}
+.download-page a:focus-visible{outline:2px solid #486543;outline-offset:5px}
+@media(max-width:640px){.install-steps{grid-template-columns:1fr;gap:24px}.install-steps>li{padding-left:36px;position:relative}.install-steps>li:before{position:absolute;left:0;top:4px}.download-intro{padding:36px 0 40px}.download-links{gap:14px}.download-section{padding:30px 0}.download-button{max-width:100%;font-size:14px}.download-page footer{gap:16px;flex-wrap:wrap}.download-page .nav-action{font-size:12px}.download-meta{line-height:1.8}.preview-description br{display:none}}
