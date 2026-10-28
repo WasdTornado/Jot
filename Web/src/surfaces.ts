@@ -4,6 +4,7 @@ export class NoteSurfaces {
   private parent?: string;
   private origin?: HTMLElement;
   onBack?: () => void;
+  onClose?: (id: string) => void;
   constructor(private restoreEditor: () => void) {}
   show(id: string, parent?: string): void {
     const origin = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
@@ -18,12 +19,14 @@ export class NoteSurfaces {
   }
   close(restore = true): void {
     const origin = this.origin;
+    const closing = this.current;
     document.querySelectorAll<HTMLElement>('.popover,.content-pane').forEach(panel => { panel.hidden = true; });
     document.querySelectorAll('[aria-expanded=true]').forEach(button => button.setAttribute('aria-expanded','false'));
     document.querySelector('.note-window')!.classList.remove('has-pane');
     document.querySelector<HTMLElement>('#editor')!.inert = false;
     document.querySelector<HTMLElement>('.page-context')!.inert = false;
     this.current = undefined; this.parent = undefined; this.origin = undefined; this.onBack = undefined;
+    if (closing) this.onClose?.(closing);
     if (restore) {
       if (origin?.isConnected && !origin.closest('[hidden]') && !origin.closest('#editor')) origin.focus({preventScroll:true});
       else this.restoreEditor();

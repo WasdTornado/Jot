@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeAll, expect, test, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 import type { Editor, JSONContent } from '@tiptap/core';
 import html from '../index.html?raw';
 import type { NoteSnapshot } from '../src/types';
@@ -17,6 +17,12 @@ vi.mock('../src/editor', async importOriginal => {
     editors.current = actual.createNoteEditor(...args); editors.all.push(editors.current); return editors.current;
   } };
 });
+// 每次重新导入入口模块后清理全局监听，避免旧编辑器响应下一条用例的按键。
+let documentListeners: ReturnType<typeof vi.spyOn>, windowListeners: ReturnType<typeof vi.spyOn>;
+beforeEach(() => {
+  documentListeners = vi.spyOn(document, 'addEventListener');
+  windowListeners = vi.spyOn(window, 'addEventListener');
+});
 afterEach(async () => {
   // 先完成真实保存流程，避免上一条用例的延迟写盘进入下一条用例。
   const notes = window.webkit?.messageHandlers.notes;
@@ -32,6 +38,9 @@ afterEach(async () => {
     });
   }
   editors.all.forEach(editor => editor.destroy()); editors.all = []; editors.current = undefined;
+  for (const [type, listener, options] of documentListeners.mock.calls) document.removeEventListener(type, listener, options);
+  for (const [type, listener, options] of windowListeners.mock.calls) window.removeEventListener(type, listener, options);
+  documentListeners.mockRestore(); windowListeners.mockRestore();
   delete window.webkit; vi.resetModules();
 });
 
@@ -416,4 +425,66 @@ test('查找和切页只响应约定组合，不吞掉带额外修饰键的操�
   const find = new KeyboardEvent('keydown', { key: 'f', metaKey: true, bubbles: true, cancelable: true });
   document.dispatchEvent(find); expect(find.defaultPrevented).toBe(true);
   expect(document.querySelector<HTMLElement>('#search-panel')!.hidden).toBe(false);
+});
+
+test('切换皮肤和字体只保存外观设置，不改写正文或选区', async () => {
+  const saved: Record<string, unknown>[] = [];
+  const editor = await openNote(null, message => { if (message.type === 'setSettings') saved.push(message.payload as Record<string, unknown>); return false; });
+  editor.commands.setContent({ type: 'doc', content: [{ type: 'blockquote', content: [{ type: 'paragraph', content: [{ type: 'text', text: '皮肤不能改写中文正文' }] }] }] });
+  editor.commands.setTextSelection({ from: 3, to: 6 });
+  const content = editor.getJSON(); const selection = editor.state.selection.toJSON();
+  const skin = document.querySelector<HTMLButtonElement>('[data-skin="cream"]');
+  expect(skin).not.toBeNull(); skin!.click();
+  const font = document.querySelector<HTMLSelectElement>('#font-family')!;
+  font.value = 'hand'; font.dispatchEvent(new Event('change'));
+  document.querySelector<HTMLInputElement>('#decorations-toggle')!.click();
+  await vi.waitFor(() => expect(saved.at(-1)).toMatchObject({ skin: 'cream', fontFamily: 'hand', decorations: false }));
+  expect(editor.getJSON()).toEqual(content); expect(editor.state.selection.toJSON()).toEqual(selection);
+  document.querySelector<HTMLButtonElement>('#reset-appearance')!.click();
+  await vi.waitFor(() => expect(saved.at(-1)).toMatchObject({ skin: 'default', fontFamily: 'auto', decorations: true }));
+  expect(editor.getJSON()).toEqual(content);
+});
+
+test('皮肤抽屉悬停仅预览，离开与 Escape 恢复，点击后才保存且保留正文选区', async () => {
+  const saved: Record<string, unknown>[] = [];
+  const editor = await openNote(null, message => { if (message.type === 'setSettings') saved.push(message.payload as Record<string, unknown>); return false; });
+  editor.commands.insertContent('预览不会改变正文'); editor.commands.setTextSelection({ from: 2, to: 5 });
+  const content = editor.getJSON(), selection = editor.state.selection.toJSON();
+  const trigger = document.querySelector<HTMLButtonElement>('#skins-button');
+  expect(trigger).not.toBeNull(); trigger!.click();
+  const panel = document.querySelector<HTMLElement>('#skins')!;
+  const mint = panel.querySelector<HTMLButtonElement>('[data-preview-skin="mint"]')!;
+  mint.dispatchEvent(new MouseEvent('pointerenter'));
+  expect(document.body.dataset.skin).toBe('mint'); expect(saved).toHaveLength(0);
+  panel.dispatchEvent(new MouseEvent('pointerleave'));
+  expect(document.body.dataset.skin).toBe('default');
+  mint.focus(); expect(document.body.dataset.skin).toBe('mint');
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  expect(panel.hidden).toBe(true); expect(document.body.dataset.skin).toBe('default');
+  trigger!.click(); mint.dispatchEvent(new MouseEvent('pointerenter')); mint.click();
+  await vi.waitFor(() => expect(saved.at(-1)?.skin).toBe('mint'));
+  expect(panel.hidden).toBe(true); expect(document.body.dataset.skin).toBe('mint');
+  expect(editor.getJSON()).toEqual(content); expect(editor.state.selection.toJSON()).toEqual(selection);
+});
+
+test('皮肤预览可用方向键浏览，切换面板或窗口失焦会取消且不落盘', async () => {
+  const saved: Record<string, unknown>[] = [], previews: unknown[] = [];
+  await openNote(null, message => {
+    if (message.type === 'setSettings') saved.push(message.payload as Record<string, unknown>);
+    if (message.type === 'previewSkin') previews.push(message.payload);
+    return false;
+  });
+  const trigger = document.querySelector<HTMLButtonElement>('#skins-button')!;
+  trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+  const panel = document.querySelector<HTMLElement>('#skins')!;
+  expect(panel.hidden).toBe(false);
+  panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+  expect(document.body.dataset.skin).toBe('sea');
+  document.querySelector<HTMLButtonElement>('#format-button')!.click();
+  expect(document.body.dataset.skin).toBe('default'); expect(previews.at(-1)).toEqual({ skin: null });
+  trigger.click(); panel.querySelector<HTMLButtonElement>('[data-preview-skin="sakura"]')!.focus();
+  expect(document.body.dataset.skin).toBe('sakura');
+  window.dispatchEvent(new Event('blur'));
+  expect(panel.hidden).toBe(true); expect(document.body.dataset.skin).toBe('default');
+  expect(saved).toHaveLength(0);
 });

@@ -15,6 +15,10 @@ struct AppSettings: Codable, Equatable {
     var hideCompleted = false
     var pageID = "page-1"
     var theme = "system"
+    static let skinIDs = ["default", "grid", "cream", "marker", "mint", "sakura", "manuscript", "sea"]
+    var skin = "default"
+    var fontFamily = "auto"
+    var decorations = true
     var fontSize = 16
     var pinned = false
     var reduceTransparency = false
@@ -22,13 +26,16 @@ struct AppSettings: Codable, Equatable {
     var windowWidth = 480
     var windowHeight = 478
     init() { }
-    enum CodingKeys: String, CodingKey { case pageNames, hideCompleted, pageID, theme, fontSize, pinned, reduceTransparency, hotKey, windowWidth, windowHeight }
+    enum CodingKeys: String, CodingKey { case pageNames, hideCompleted, pageID, theme, skin, fontFamily, decorations, fontSize, pinned, reduceTransparency, hotKey, windowWidth, windowHeight }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         pageNames = try values.decodeIfPresent([String: String].self, forKey: .pageNames) ?? [:]
         hideCompleted = try values.decodeIfPresent(Bool.self, forKey: .hideCompleted) ?? false
         pageID = try values.decodeIfPresent(String.self, forKey: .pageID) ?? pageID
         theme = try values.decodeIfPresent(String.self, forKey: .theme) ?? theme
+        skin = try values.decodeIfPresent(String.self, forKey: .skin) ?? skin
+        fontFamily = try values.decodeIfPresent(String.self, forKey: .fontFamily) ?? fontFamily
+        decorations = try values.decodeIfPresent(Bool.self, forKey: .decorations) ?? decorations
         fontSize = try values.decodeIfPresent(Int.self, forKey: .fontSize) ?? fontSize
         pinned = try values.decodeIfPresent(Bool.self, forKey: .pinned) ?? pinned
         reduceTransparency = try values.decodeIfPresent(Bool.self, forKey: .reduceTransparency) ?? reduceTransparency
@@ -39,6 +46,8 @@ struct AppSettings: Codable, Equatable {
     func validate() throws {
         guard (1...7).map({ "page-\($0)" }).contains(pageID),
               ["system", "light", "dark"].contains(theme), [15, 16, 18].contains(fontSize),
+              Self.skinIDs.contains(skin),
+              ["auto", "system", "hand", "serif"].contains(fontFamily),
               (360...900).contains(windowWidth), (360...1000).contains(windowHeight) else { throw NoteError.invalidDocument }
         guard pageNames.allSatisfy({ (1...7).map { "page-\($0)" }.contains($0.key) && !$0.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && $0.value.count <= 20 && $0.value.rangeOfCharacter(from: .controlCharacters) == nil }) else { throw NoteError.invalidDocument }
         try hotKey.validate()

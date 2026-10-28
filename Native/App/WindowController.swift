@@ -4,6 +4,7 @@ import WebKit
 @MainActor final class WindowController: NSObject, NSWindowDelegate {
     let window: NotePanel
     let bridge: EditorBridge
+    private var previewSkin: String?
     private let surface: GlassSurface
     private let loadView = EditorLoadView(frame:.zero)
     private let visibility = WindowVisibilityCoordinator()
@@ -34,11 +35,12 @@ import WebKit
         loadView.onRetry = { [weak self] in self?.bridge.retryEditorLoad() }
         bridge.onLoadState = { [weak self] visible,error in
             guard let self else { return }
-            if visible { self.loadView.showFailure(error) } else { self.loadView.isHidden = true }
+            if visible { self.previewSkin = nil; self.applySettings(); self.loadView.showFailure(error) } else { self.loadView.isHidden = true }
         }
         bridge.window = window
         bridge.onHide = { [weak self] in await self?.hide() }
         bridge.onSettings = { [weak self] in self?.applySettings() }
+        bridge.onPreviewSkin = { [weak self] skin in self?.previewSkin = skin; self?.applySettings() }
         applySettings(); bridge.start()
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(environmentChanged), name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
         DistributedNotificationCenter.default().addObserver(self, selector: #selector(environmentChanged), name: Notification.Name("AppleInterfaceThemeChangedNotification"), object: nil)
@@ -50,7 +52,7 @@ import WebKit
         window.level = settings.pinned ? .floating : .normal
         let dark = window.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
         let solid = settings.reduceTransparency || NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
-        surface.setSolid(solid, dark: dark)
+        surface.setSolid(solid, dark: dark, skin: previewSkin ?? settings.skin)
         bridge.sendEnvironment(dark: dark, solid: solid)
     }
     func show(anchorProvider: @escaping () -> (rect: NSRect, screen: NSScreen)?) {

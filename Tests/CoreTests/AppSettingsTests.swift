@@ -30,6 +30,20 @@ final class AppSettingsTests: XCTestCase {
         invalid = settings; invalid.hotKey.modifiers = 512
         XCTAssertThrowsError(try invalid.validate())
     }
+    func testSkinsAndFontsPersistWithoutChangingLegacyPreferences() throws {
+        let old = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"theme":"dark","fontSize":18}"#.utf8))
+        XCTAssertEqual(old.skin, "default"); XCTAssertEqual(old.fontFamily, "auto"); XCTAssertTrue(old.decorations)
+        for skin in ["default", "grid", "cream", "marker", "mint", "sakura", "manuscript", "sea"] {
+            var next = old; next.skin = skin; next.fontFamily = "hand"; next.decorations = false
+            try next.validate()
+            let loaded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(next))
+            XCTAssertEqual(loaded, next); XCTAssertEqual(loaded.theme, "dark"); XCTAssertEqual(loaded.fontSize, 18)
+        }
+        var invalid = old; invalid.skin = "unknown"
+        XCTAssertThrowsError(try invalid.validate())
+        invalid = old; invalid.fontFamily = "external-font"
+        XCTAssertThrowsError(try invalid.validate())
+    }
     func testHotKeyConflictRetainsOldRegistration() throws {
         var released: [UInt32] = []
         let binding = HotKeyRegistration<UInt32>(register: { key in

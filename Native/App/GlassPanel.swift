@@ -29,7 +29,16 @@ final class NotePanel: NSPanel {
         // 同一轮廓同时约束网页和系统材质，指向角不单独叠一片玻璃。
         let mask = CALayer(); mask.frame = bounds; mask.contents = image; layer?.mask = mask
     }
-    func setSolid(_ solid: Bool, dark: Bool) {
+    func setSolid(_ solid: Bool, dark: Bool, skin: String = "default") {
+        // 指向菜单栏的小尖角和网页纸张共用配色，避免换肤后出现拼接色差。
+        if skin != "default" {
+            let colors: [String: (Int, Int)] = ["grid": (0xfafbf6, 0x252e32), "cream": (0xfff8e9, 0x322d25), "marker": (0xfdfcf8, 0x292d29), "mint": (0xf0f7ee, 0x25342d), "sakura": (0xfff3f4, 0x392a34), "manuscript": (0xf6eddb, 0x332e25), "sea": (0xf0f7fb, 0x202e3c)]
+            let pair = colors[skin] ?? (0xf9f5f3, 0x2c282b)
+            let value = dark ? pair.1 : pair.0
+            let color = NSColor(calibratedRed: CGFloat((value >> 16) & 255) / 255, green: CGFloat((value >> 8) & 255) / 255, blue: CGFloat(value & 255) / 255, alpha: 1)
+            material.isHidden = true; tint.layer?.backgroundColor = color.cgColor; layer?.backgroundColor = color.cgColor
+            return
+        }
         material.isHidden = solid
         tint.layer?.backgroundColor = (dark ? NSColor(calibratedRed: 44/255, green: 40/255, blue: 43/255, alpha: 0.95) : NSColor(calibratedRed: 249/255, green: 245/255, blue: 243/255, alpha: 0.86)).cgColor
         layer?.backgroundColor = solid ? (dark ? NSColor(calibratedRed: 44/255, green: 40/255, blue: 43/255, alpha: 1) : NSColor(calibratedRed: 249/255, green: 245/255, blue: 243/255, alpha: 1)).cgColor : NSColor.clear.cgColor

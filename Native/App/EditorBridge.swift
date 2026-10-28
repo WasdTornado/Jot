@@ -25,6 +25,7 @@ import ServiceManagement
     var onCheckForUpdates: (() -> Void)?
     var onHide: (() async -> Void)?
     var onSettings: (() -> Void)?
+    var onPreviewSkin: ((String?) -> Void)?
     var onPageNames: (([String: String]) -> Void)?
     private var pendingArchive: (token: String, archive: WorkspaceArchive)?
     var onHotKey: ((HotKeySettings) throws -> Void)?
@@ -267,6 +268,11 @@ import ServiceManagement
                           let revision = payload["expectedRevision"] as? NSNumber else { throw NoteError.invalidDocument }
                     let restored = try await repository.restore(pageID: page, backupID: backupID, expectedRevision: revision.int64Value)
                     reply("restoreResult", id: id, payload: try json(restored))
+                case "previewSkin":
+                    guard let payload = body["payload"] as? [String: Any] else { throw NoteError.invalidDocument }
+                    let skin = payload["skin"] as? String
+                    guard skin == nil || AppSettings.skinIDs.contains(skin!) else { throw NoteError.invalidDocument }
+                    onPreviewSkin?(skin); reply("previewSkinResult", id: id)
                 case "setSettings":
                     let data = try JSONSerialization.data(withJSONObject: body["payload"] ?? NSNull())
                     var next = try JSONDecoder().decode(AppSettings.self, from: data)

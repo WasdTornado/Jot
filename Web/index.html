@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>Jot</title><link rel="stylesheet" href="style.css"></head><body>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>Jot</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="appearance.css"></head><body>
   <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
     <symbol id="i-settings" viewBox="0 0 24 24"><path d="m10 3-.7 2.4-2 .9L5 5.7 3 9l1.7 1.8v2.4L3 15l2 3.3 2.3-.6 2 .9.7 2.4h4l.7-2.4 2-.9 2.3.6 2-3.3-1.7-1.8v-2.4L21 9l-2-3.3-2.3.6-2-.9L14 3Z"/><circle cx="12" cy="12" r="3"/></symbol>
@@ -27,7 +27,8 @@
   <header class="window-toolbar">
     <button class="icon-button" id="close" type="button" aria-label="收起便签" title="收起便签 · Esc"><svg><use href="#i-close"/></svg></button>
     <nav class="page-tabs" aria-label="七页便签"></nav>
-    <button class="icon-button" id="search-button" type="button" aria-label="查找便签" title="查找便签 · ⌘F" aria-expanded="false" aria-controls="search-panel"><svg><use href="#i-search"/></svg></button>
+    <div class="toolbar-actions"><button class="icon-button" id="pin-button" type="button" aria-label="置顶便签" aria-pressed="false" title="置顶便签"><svg><use href="#i-pin"/></svg></button>
+    <button class="icon-button" id="search-button" type="button" aria-label="查找便签" title="查找便签 · ⌘F" aria-expanded="false" aria-controls="search-panel"><svg><use href="#i-search"/></svg></button></div>
   </header>
   <div class="page-context">
     <button id="rename-page" class="page-name" type="button" aria-label="重命名当前页" aria-expanded="false" aria-controls="rename-dialog"><span id="page-index"></span><span id="current-page-name"></span><svg><use href="#i-down"/></svg></button>
@@ -38,12 +39,13 @@
   <footer class="window-footer">
     <div class="save-status" role="status" aria-live="polite"><span class="status-dot"></span><span id="status">正在读取…</span></div>
     <span class="word-count" id="word-count">0 字</span>
-    <div class="footer-actions"><span id="pin-label" hidden>已置顶</span>
-      <button class="icon-button" id="pin-button" type="button" aria-label="置顶便签" aria-pressed="false" title="置顶便签"><svg><use href="#i-pin"/></svg></button>
+    <div class="footer-actions">
+      <button class="icon-button" id="skins-button" type="button" aria-label="便签皮肤" title="便签皮肤" aria-expanded="false" aria-controls="skins"><svg viewBox="0 0 24 24"><rect x="8" y="4" width="12" height="16" rx="3"/><path d="m8 6-3 1a2 2 0 0 0-1.5 2.4L6 19a2 2 0 0 0 2.4 1.5M12 9h4m-4 4h4"/></svg></button>
       <button class="icon-button" id="format-button" type="button" aria-label="文字格式" title="文字格式" aria-expanded="false" aria-controls="format"><span class="type-label">Aa</span></button>
       <button class="icon-button" id="notes-button" type="button" aria-label="便签操作" title="便签操作" aria-expanded="false" aria-controls="notes"><svg><use href="#i-more"/></svg></button>
     </div>
   </footer>
+  <div id="skins" class="popover skin-picker" hidden aria-label="选择便签皮肤"><div class="skin-picker-title">换张纸，换个心情</div><div class="skin-fan" role="group" aria-label="皮肤列表"></div><p id="skin-preview-status" role="status">悬停预览 · 点击选定</p></div>
   <div id="format" class="popover format-panel" hidden aria-label="文字格式">
     <h2>文字样式</h2><div id="mark-actions" aria-label="文字样式" class="mark-actions"></div>
     <div class="format-separator"></div><h2>段落类型</h2><div id="format-actions" class="block-actions" aria-label="段落类型"><button id="insert-task" class="menu-action" type="button" title="插入待办 · 行首 [] 空格">插入待办</button></div><div class="format-separator"></div><div id="extra-formats"></div>
@@ -69,6 +71,10 @@
   <section id="settings" class="content-pane" aria-label="设置" hidden>
     <header class="pane-head"><button type="button" class="icon-button" data-back aria-label="返回上一级"><svg><use href="#i-back"/></svg></button><h2>设置</h2></header>
     <div class="pane-body settings-body"><h3>显示</h3><div class="setting-row"><span>外观</span><div class="appearance-options segmented"><button type="button" data-theme="system">跟随系统</button><button type="button" data-theme="light">浅色</button><button type="button" data-theme="dark">深色</button></div></div>
+    <div class="skin-options" role="group" aria-label="便签皮肤"></div>
+    <label class="setting-row" for="font-family"><span>正文字体</span><select id="font-family"><option value="auto">跟随皮肤</option><option value="system">系统字体</option><option value="hand">霞鹜文楷 · 手写</option><option value="serif">宋体 · 书卷</option></select></label>
+    <label class="setting-row" for="decorations-toggle"><span>小装饰与荧光笔触</span><input id="decorations-toggle" type="checkbox" role="switch"></label>
+    <div class="setting-row"><span class="settings-hint">应用于全部七页，不改变正文</span><button id="reset-appearance" class="text-button" type="button">恢复默认皮肤</button></div>
     <div class="setting-row"><span>文字大小</span><div class="font-options segmented"><button type="button" data-font="15">小</button><button type="button" data-font="16">标准</button><button type="button" data-font="18">大</button></div></div>
     <label class="setting-row" for="solid-toggle"><span>减少透明效果</span><input id="solid-toggle" type="checkbox" role="switch"></label><p id="preference-message" class="settings-hint" role="status"></p>
     <div class="format-separator"></div><h3>快捷键与启动</h3><button id="hotkey-button" class="menu-action" type="button">打开 / 收起便签<span id="hotkey-label">⌃⌥空格</span></button><p id="hotkey-message" class="settings-hint" role="status"></p><p id="append-shortcut" class="settings-hint">加按 Shift 呼出并新建无格式正文。</p>

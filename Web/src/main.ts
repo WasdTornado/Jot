@@ -1,3 +1,4 @@
+import { setupSkinPicker, skins, type Skin } from './skinPicker';
 import { selectAllNoteText } from './editorInput';
 import { setupPageDock } from './pageDock';
 import { NoteSurfaces } from './surfaces';
@@ -34,6 +35,7 @@ const bridge = new NativeBridge(message => {
 });
 window.totNotes = { receive: value => bridge.receive(value), selectAll: () => selectAllNoteText(workspace.active?.editor) };
 let settings = { ...defaultSettings };
+let previewSkin: Skin | undefined;
 let loadFailed = false;
 let initialLoading = true;
 let systemDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
@@ -81,6 +83,19 @@ function showError(error: unknown, retryAction?: () => Promise<void>): void {
 function renderAppearance(): void {
   const dark = settings.theme === 'dark' || (settings.theme === 'system' && systemDark);
   document.body.classList.toggle('dark', dark); document.body.classList.toggle('solid', settings.reduceTransparency || systemSolid);
+  const skin = previewSkin ?? settings.skin;
+  document.body.dataset.skin = skin;
+  document.body.classList.toggle('without-decorations', !settings.decorations);
+  const family = settings.fontFamily === 'auto' ? (skins.find(item => item.id === skin)?.font ?? 'system') : settings.fontFamily;
+  document.body.style.setProperty('--note-font-family', family === 'hand' ? '"Jot WenKai", var(--font-ui)' : family === 'serif' ? '"Songti SC", "STSong", serif' : 'var(--font-ui)');
+  document.querySelector<HTMLSelectElement>('#font-family')!.value = settings.fontFamily;
+  document.querySelector<HTMLInputElement>('#decorations-toggle')!.checked = settings.decorations;
+  document.querySelectorAll<HTMLButtonElement>('button[data-skin]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.skin === settings.skin)));
+  document.querySelectorAll<HTMLButtonElement>('[data-preview-skin]').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.previewSkin === settings.skin));
+    button.classList.toggle('is-preview', button.dataset.previewSkin === previewSkin);
+  });
+  document.querySelector('#skin-preview-status')!.textContent = previewSkin ? `预览 · ${skins.find(item => item.id === previewSkin)?.name}` : '悬停预览 · 点击选定';
   // 保留已保存的字号档位值，渲染为紧凑版的 13 / 14 / 16 pt，避免重置用户的档位选择。
   document.body.style.setProperty('--editor-font', `${settings.fontSize - 2}px`);
   const page = pages.find(page => page.id === workspace.active?.pageID) ?? pages[2];
@@ -107,7 +122,7 @@ function renderAppearance(): void {
   document.querySelector('#hotkey-label')!.textContent = settings.hotKey.label;
   pin.setAttribute('aria-pressed', String(settings.pinned));
   pin.setAttribute('aria-label', settings.pinned ? '取消置顶' : '置顶便签'); pin.title = settings.pinned ? '取消置顶' : '置顶便签';
-  document.querySelector<HTMLElement>('#pin-label')!.hidden = !settings.pinned;
+
   document.querySelector<HTMLInputElement>('#solid-toggle')!.checked = settings.reduceTransparency;
   document.querySelectorAll<HTMLButtonElement>('[data-theme]').forEach(button => {
     button.classList.toggle('selected', button.dataset.theme === settings.theme); button.setAttribute('aria-pressed', String(button.dataset.theme === settings.theme));
@@ -201,8 +216,15 @@ function togglePanel(id: string): void {
   if (busy() || workspace.active?.editor.view.composing) return;
   if (surfaces.current === id) { surfaces.close(); return; }
   surfaces.show(id, id === 'settings' || id === 'backup-panel' ? 'notes' : undefined);
+  if (id === 'skins') document.querySelector<HTMLElement>('#skins [aria-pressed=true]')?.scrollIntoView?.({ block:'nearest' });
 }
-for (const id of ['settings','format','notes']) document.querySelector(`#${id}-button`)!.addEventListener('click', () => togglePanel(id));
+for (const id of ['settings','format','notes','skins']) document.querySelector(`#${id}-button`)!.addEventListener('click', () => togglePanel(id));
+document.querySelector('#skins-button')!.addEventListener('keydown', event => {
+  const key = event as KeyboardEvent;
+  if (!['ArrowUp','ArrowDown'].includes(key.key) || busy()) return;
+  key.preventDefault(); if (surfaces.current !== 'skins') togglePanel('skins');
+  document.querySelector<HTMLButtonElement>('#skins [aria-pressed=true]')?.focus({ preventScroll:true });
+});
 document.querySelector('#backup-button')!.addEventListener('click', () => togglePanel('backup-panel'));
 document.querySelector('#help-button')!.addEventListener('click', () => { if (!busy()) surfaces.show('help-panel','settings'); });
 document.querySelectorAll('[data-back]').forEach(button => button.addEventListener('click', () => { if (!busy()) surfaces.back(); }));
@@ -233,10 +255,37 @@ for (const id of ['paragraph','heading1','task','bulletList','orderedList','bloc
 }
 document.addEventListener('pointerdown', event => {
   if (busy()) return;
-  if (!(event.target as Element).closest('.popover,.content-pane,#rename-page,#completed-summary,#format-button,#notes-button') && !document.querySelector<HTMLElement>('.content-pane:not([hidden])')) closePanels();
+  if (!(event.target as Element).closest('.popover,.content-pane,#rename-page,#completed-summary,#format-button,#notes-button,#skins-button') && !document.querySelector<HTMLElement>('.content-pane:not([hidden])')) closePanels();
 });
 document.querySelectorAll<HTMLButtonElement>('[data-theme]').forEach(button => button.addEventListener('click', () => { if (!busy()) saveSettings({ theme: button.dataset.theme as AppSettings['theme'] }); }));
 document.querySelectorAll<HTMLButtonElement>('[data-font]').forEach(button => button.addEventListener('click', () => { if (!busy()) saveSettings({ fontSize: Number(button.dataset.font) as AppSettings['fontSize'] }); }));
+function previewAppearance(skin?: Skin): void {
+  if (skin && (busy() || surfaces.current !== 'skins')) return;
+  if (previewSkin === skin) return;
+  previewSkin = skin; renderAppearance();
+  // 原生尖角同步临时配色；该消息不修改偏好或正文。
+  void bridge.request('previewSkin', { skin: skin ?? null }).catch(showError);
+}
+setupSkinPicker(previewAppearance, skin => {
+  if (busy()) return;
+  saveSettings({ skin }); surfaces.close();
+});
+surfaces.onClose = id => { if (id === 'skins') previewAppearance(); };
+window.addEventListener('blur', () => { if (surfaces.current === 'skins') surfaces.close(false); });
+document.querySelectorAll<HTMLButtonElement>('button[data-skin]').forEach(button => button.addEventListener('click', () => {
+  if (!busy()) saveSettings({ skin: button.dataset.skin as AppSettings['skin'] });
+}));
+document.querySelector('#font-family')!.addEventListener('change', event => {
+  if (busy()) { renderAppearance(); return; }
+  saveSettings({ fontFamily: (event.target as HTMLSelectElement).value as AppSettings['fontFamily'] });
+});
+document.querySelector('#decorations-toggle')!.addEventListener('change', event => {
+  if (busy()) { renderAppearance(); return; }
+  saveSettings({ decorations: (event.target as HTMLInputElement).checked });
+});
+document.querySelector('#reset-appearance')!.addEventListener('click', () => {
+  if (!busy()) saveSettings({ skin: 'default', fontFamily: 'auto', decorations: true });
+});
 document.querySelector('#solid-toggle')!.addEventListener('change', event => {
   const input = event.target as HTMLInputElement;
   if (busy()) { input.checked = settings.reduceTransparency; return; }
@@ -350,6 +399,7 @@ document.addEventListener('keydown', event => {
 });
 bridge.onCommand = message => {
   if (message.type === 'requestFlush') {
+    if (surfaces.current === 'skins') surfaces.close(false);
     void (async () => {
       try {
         // 初次加载失败且始终只读时，不存在未保存编辑，允许正常退出。

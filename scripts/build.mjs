@@ -1,7 +1,7 @@
 import { ensureSparkle } from './sparkle.mjs';
 import { buildAppIcon } from './build-icons.mjs';
 import { build } from '../Web/node_modules/esbuild/lib/main.js';
-import { mkdir, copyFile, readdir, readFile, writeFile, rm } from 'node:fs/promises';
+import { mkdir, cp, copyFile, readdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -38,6 +38,9 @@ await writeFile(path.join(resources, 'ThirdPartyLicenses.txt'), notices.join('\n
 const appVersion = execFileSync('plutil', ['-extract', 'CFBundleShortVersionString', 'raw', '-o', '-', path.join(root, 'Native/App/Info.plist')], { encoding: 'utf8' }).trim();
 await writeFile(path.join(resources, 'index.html'), (await readFile(path.join(root, 'Web/index.html'), 'utf8')).replaceAll('__APP_VERSION__', appVersion));
 await copyFile(path.join(root, 'Web/src/style.css'), path.join(resources, 'style.css'));
+await copyFile(path.join(root, 'Web/src/appearance.css'), path.join(resources, 'appearance.css'));
+// 字体与许可随应用离线打包，使用时不下载资源，也不注册系统字体。
+await cp(path.join(root, 'Web/assets'), path.join(resources, 'assets'), { recursive: true });
 await copyFile(path.join(root, 'Native/App/Info.plist'), path.join(contents, 'Info.plist'));
 await buildAppIcon(path.join(root, 'Assets/AppIcon/Jot.svg'), path.join(resources, 'JotLightStack.icns'));
 const sources = [];
