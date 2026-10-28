@@ -1,0 +1,12 @@
+import {build} from '../Web/node_modules/esbuild/lib/main.js';
+import {mkdir,copyFile,writeFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+import {homedir} from 'node:os';
+import path from 'node:path';
+const app=path.join(homedir(),'Applications/JotletEditorHarness.app');
+await mkdir(app+'/Contents/MacOS',{recursive:true});await mkdir(app+'/Contents/Resources',{recursive:true});
+await build({entryPoints:['Tests/EditorHarness/editor.ts'],bundle:true,target:'safari17',outfile:app+'/Contents/Resources/qa.js'});
+await copyFile('Tests/EditorHarness/index.html',app+'/Contents/Resources/index.html');await copyFile('Web/src/style.css',app+'/Contents/Resources/style.css');
+await writeFile(app+'/Contents/Info.plist','<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>local.jotlet.editorharness</string><key>CFBundleExecutable</key><string>EditorHarness</string><key>CFBundleName</key><string>JotletEditorHarness</string></dict></plist>');
+execFileSync('xcrun',['swiftc','-framework','AppKit','-framework','WebKit','Tests/EditorHarness/main.swift','-o',app+'/Contents/MacOS/EditorHarness'],{env:{...process.env,DEVELOPER_DIR:'/Applications/Xcode.app/Contents/Developer'},stdio:'inherit'});
+execFileSync('codesign',['--force','--sign','-',app],{stdio:'inherit'});console.log(app);

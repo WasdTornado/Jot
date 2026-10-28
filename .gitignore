@@ -1,0 +1,10 @@
+.build/
+.superpowers/
+Web/node_modules/
+Web/dist/
+dist/
+.DS_Store
+*.log
+.local-qa/
+
+Assets/AppIcon/node_modules/

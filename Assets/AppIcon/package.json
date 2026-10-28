@@ -1,0 +1,8 @@
+{
+  "name": "jot-icon-tools",
+  "private": true,
+  "description": "Jot 本地图标构建工具，不打包进入应用",
+  "devDependencies": {
+    "@resvg/resvg-js": "2.6.2"
+  }
+}
