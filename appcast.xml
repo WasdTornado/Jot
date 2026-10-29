@@ -3,14 +3,14 @@
     <channel>
         <title>Jot</title>
         <item>
-            <title>0.2.0</title>
-            <pubDate>Wed, 28 Oct 2026 21:54:02 +0800</pubDate>
-            <sparkle:version>2</sparkle:version>
-            <sparkle:shortVersionString>0.2.0</sparkle:shortVersionString>
+            <title>0.2.1</title>
+            <pubDate>Thu, 29 Oct 2026 13:27:07 +0800</pubDate>
+            <sparkle:version>5</sparkle:version>
+            <sparkle:shortVersionString>0.2.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Jot 0.2.0 · 换张纸，换个心情</h2><ul><li>新增八种便签外观：默认、方格手账、奶油贴纸、荧光清单、薄荷花园、樱花信笺、复古稿纸、海盐蓝调。</li><li>右下角皮肤卡片向上展开，悬停即时预览，点击选定；移开或 Esc 恢复，不改写正文。</li><li>离线中文手写文楷、系统字体与宋体，支持深浅外观和装饰开关。</li><li>置顶移到右上角，加强深色选中态；小窗口主题列表可滚动。</li></ul><p>支持 macOS 14+、Apple 芯片与 Intel。本机旧便签与设置继续兼容。当前仍为未经 Apple Developer ID 签名及 Apple 公证的预览版。</p>
+            <description><![CDATA[<h2>Jot 0.2.1 · 轻轻拉开，自在停留</h2><ul><li>顶部空白区域可以直接拖动；轻拉回弹，继续下拉自动脱离菜单栏并置顶。</li><li>左上角新增模式切换：跟随菜单栏或自由移动。关闭按钮继续保留。</li><li>自由便签可以吸回菜单栏，再连续展开；置顶与位置模式独立，尊重系统减少动态偏好。</li><li>修复尖角与顶部之间的透明接缝，主题入口换成更直白的调色板图标。</li></ul><p>支持 macOS 14+、Apple 芯片与 Intel。便签与设置继续沿用。当前仍为未完成 Developer ID 发行签名和 Apple 公证的预览版。</p>
 ]]></description>
-            <enclosure url="https://wasdtornado.github.io/Jot/downloads/Jot-0.2.0-preview.dmg" length="10392858" type="application/octet-stream" sparkle:edSignature="uc70II9Twog1vPWeB8wsLYYdJkaAou4+4XHtBjEPu6GboDuFkhU3GAZrGrPvpPCzPJyeuGpiQjET1xNMv5P8Cw=="/>
+            <enclosure url="https://wasdtornado.github.io/Jot/downloads/Jot-0.2.1-preview.dmg" length="10465046" type="application/octet-stream" sparkle:edSignature="ncKi87P4a/uVrIoCVENPIEYwRErcikAZyQnyGzOREVSThwsEh2Ydp6/QjP5abEPMI3Tq/yMYbXzJsnGUOM/VBA=="/>
         </item>
     </channel>
 </rss>
