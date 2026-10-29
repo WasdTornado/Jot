@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>Jot</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="appearance.css"><link rel="stylesheet" href="demo.css"></head><body>
+  <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-docked" viewBox="0 0 24 24"><path d="M3 4h18M12 4v4"/><rect x="6" y="8" width="12" height="12" rx="2"/><path d="M9 12h6"/></symbol>
+    <symbol id="i-floating" viewBox="0 0 24 24"><path d="M12 2v4m-2-2 2-2 2 2M12 18v4m-2-2 2 2 2-2M2 12h4m-2-2-2 2 2 2m14-2h4m-2-2 2 2-2 2"/><rect x="8" y="8" width="8" height="8" rx="1.5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="m10 3-.7 2.4-2 .9L5 5.7 3 9l1.7 1.8v2.4L3 15l2 3.3 2.3-.6 2 .9.7 2.4h4l.7-2.4 2-.9 2.3.6 2-3.3-1.7-1.8v-2.4L21 9l-2-3.3-2.3.6-2-.9L14 3Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="m8 3 8 0-1 5 3 4v2H6v-2l3-4-1-5Zm4 11v7"/></symbol>
+    <symbol id="i-type" viewBox="0 0 24 24"><path d="m3 18 5.5-13L14 18M5 14h7m5-4c4-2 5 1 5 3v5m0-5c-8-1-7 7 0 3"/></symbol>
+    <symbol id="i-export" viewBox="0 0 24 24"><path d="M7 9H5a1 1 0 0 0-1 1v10h16V10a1 1 0 0 0-1-1h-2M12 15V3m-4 4 4-4 4 4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="4"/><path d="M8 8h8M8 12h8m-8 4h5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="7"/><path d="m15 15 5 5"/></symbol>
+    <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 12.5h.01M10 12.5h.01M14 12.5h.01M18 12.5h.01M7 16h10"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="19" cy="12" r="1" fill="currentColor"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="m10 6 6 6-6 6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 2 7M3 5v6h6m3-4v6l4 2"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><path d="M4 7h16v13H4ZM3 3h18v4H3ZM9 11h6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-task" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+    <symbol id="i-quote" viewBox="0 0 24 24"><path d="M5 5v14M10 8h10M10 12h10M10 16h6"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6m8-12 6 6-6 6"/></symbol>
+  </svg>
+<section class="note-window" aria-label="Jot 便签窗口">
+  <header class="window-toolbar" id="window-drag-region">
+    <div class="toolbar-leading">
+    <button class="icon-button" id="close" type="button" aria-label="收起便签" title="收起便签 · Esc"><svg><use href="#i-close"/></svg></button>
+    <button class="icon-button" id="window-mode" type="button" aria-label="跟随菜单栏 · 点击切换为自由移动" title="跟随菜单栏 · 点击切换为自由移动" aria-pressed="false"><svg><use href="#i-docked"/></svg></button>
+    </div>
+    <nav class="page-tabs" aria-label="七页便签"></nav>
+    <div class="toolbar-actions"><button class="icon-button" id="pin-button" type="button" aria-label="置顶便签" aria-pressed="false" title="置顶便签"><svg><use href="#i-pin"/></svg></button>
+    <button class="icon-button" id="search-button" type="button" aria-label="查找便签" title="查找便签 · ⌘F" aria-expanded="false" aria-controls="search-panel"><svg><use href="#i-search"/></svg></button></div>
+  </header>
+  <div class="page-context">
+    <button id="rename-page" class="page-name" type="button" aria-label="重命名当前页" aria-expanded="false" aria-controls="rename-dialog"><span id="page-index"></span><span id="current-page-name"></span><svg><use href="#i-down"/></svg></button>
+    <button id="completed-summary" class="completed-summary" type="button" hidden aria-expanded="false" aria-controls="completed-panel"></button>
+  </div>
+  <main class="editor-shell" id="editor" aria-label="便签编辑区"></main>
+  <div id="hint" class="empty-state" hidden><p>随手记点什么…</p><span>输入 <kbd>[]</kbd> 空格创建待办，或 <kbd>/</kbd> 选择格式</span><button id="empty-insert-task" class="text-button" type="button">插入待办</button></div>
+  <footer class="window-footer">
+    <div class="save-status" role="status" aria-live="polite"><span class="status-dot"></span><span id="status">正在读取…</span></div>
+    <span class="word-count" id="word-count">0 字</span>
+    <div class="footer-actions">
+      <button class="icon-button" id="skins-button" type="button" aria-label="便签皮肤" title="便签皮肤" aria-expanded="false" aria-controls="skins"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C6.8 3 3 6.8 3 11.6 3 17 7.1 21 12.1 21h1.1c1.8 0 2.5-1.8 1.5-3-.6-.7-.5-1.6.2-2.1.7-.5 1.6-.4 2.5-.4 2.5 0 3.6-1.6 3.6-4C21 6.8 16.8 3 12 3Z"/><circle cx="7.2" cy="10" r=".9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="6.9" r=".9" fill="currentColor" stroke="none"/><circle cx="15" cy="7.5" r=".9" fill="currentColor" stroke="none"/><circle cx="6.9" cy="14.2" r=".9" fill="currentColor" stroke="none"/></svg></button>
+      <button class="icon-button" id="format-button" type="button" aria-label="文字格式" title="文字格式" aria-expanded="false" aria-controls="format"><span class="type-label">Aa</span></button>
+      <button class="icon-button" id="help-button" type="button" aria-label="快捷键" title="快捷键" aria-expanded="false" aria-controls="help-panel"><svg aria-hidden="true"><use href="#i-keyboard"/></svg></button>
+      <button class="icon-button" id="notes-button" type="button" aria-label="便签操作" title="便签操作" aria-expanded="false" aria-controls="notes"><svg><use href="#i-more"/></svg></button>
+    </div>
+  </footer>
+  <div id="skins" class="popover skin-picker" hidden aria-label="选择便签皮肤"><div class="skin-picker-title">换张纸，换个心情</div><div class="skin-fan" role="group" aria-label="皮肤列表"></div><p id="skin-preview-status" role="status">悬停预览 · 点击选定</p></div>
+  <div id="format" class="popover format-panel" hidden aria-label="文字格式">
+    <h2>文字样式</h2><div id="mark-actions" aria-label="文字样式" class="mark-actions"></div>
+    <div class="format-separator"></div><h2>段落类型</h2><div id="format-actions" class="block-actions" aria-label="段落类型"><button id="insert-task" class="menu-action" type="button" title="插入待办 · 行首 [] 空格">插入待办</button></div><div class="format-separator"></div><div id="extra-formats"></div>
+  </div>
+  <div id="completed-panel" class="popover completed-panel" hidden aria-label="整理已完成待办"><h2>当前页的完成项</h2><button id="fold-completed" class="menu-action" type="button">隐藏已完成</button><div class="format-separator"></div><button id="clear-completed" class="menu-action" type="button">移除已完成待办</button><p class="small-note">移除后可撤销。<br>有未完成子项的待办会保留。</p></div>
+  <div id="rename-dialog" class="popover rename-panel" hidden aria-labelledby="rename-title"><form id="rename-form"><h2 id="rename-title">便签名称</h2><label class="visually-hidden" for="page-name-input">页面名称</label><input id="page-name-input" maxlength="40" placeholder="输入页名"><p id="rename-message" class="small-note" role="status">最多 20 字，留空恢复默认名称。</p><div class="dialog-actions"><button id="rename-cancel" type="button">取消</button><button id="rename-confirm" class="primary" type="submit">保存</button></div></form></div>
+  <div id="notes" class="popover notes-panel" hidden aria-label="便签操作">
+    <h2 id="notes-title">当前页</h2>
+    <button id="export" class="menu-action" type="button" disabled><svg><use href="#i-export"/></svg>导出当前页…<span>⌘⇧E</span></button>
+    <button id="history-button" class="menu-action" type="button"><svg><use href="#i-history"/></svg>历史版本</button>
+    <div class="format-separator"></div>
+    <button id="settings-button" class="menu-action" type="button"><svg><use href="#i-settings"/></svg>设置</button>
+    <div class="format-separator"></div><button id="quit" class="menu-action" type="button">退出 Jot<span>⌘Q</span></button>
+  </div>
+  <section id="search-panel" class="content-pane" aria-label="查找便签" hidden>
+    <header class="search-head"><button id="search-close" class="icon-button" type="button" aria-label="返回便签" title="返回便签 · Esc"><svg aria-hidden="true"><use href="#i-back"/></svg></button><div class="searchbox"><svg aria-hidden="true"><use href="#i-search"/></svg><input id="search-input" type="search" placeholder="查找文字或待办" aria-label="查找文字或待办"></div></header>
+    <div class="search-scope-row"><div class="segmented" role="group" aria-label="搜索范围"><button data-search-scope="all" type="button" aria-pressed="true">全部七页</button><button data-search-scope="current" type="button" aria-pressed="false">当前页</button></div><select id="search-scope" hidden aria-label="搜索范围"><option value="all">全部七页</option><option value="current">当前页</option></select><p id="search-status" role="status" aria-atomic="true"></p></div>
+    <div class="pane-body search-body"><div id="search-results"></div></div>
+    <footer class="pane-foot"><span>↑ ↓ 选择 · Enter 打开</span><span>Esc 返回</span></footer>
+  </section>
+  <section id="settings" class="content-pane" aria-label="设置" hidden>
+    <header class="pane-head"><button type="button" class="icon-button" data-back aria-label="返回上一级"><svg><use href="#i-back"/></svg></button><h2>设置</h2></header>
+    <div class="pane-body settings-body"><h3>显示</h3><div class="setting-row"><span>外观</span><div class="appearance-options segmented"><button type="button" data-theme="system">跟随系统</button><button type="button" data-theme="light">浅色</button><button type="button" data-theme="dark">深色</button></div></div>
+    <label class="setting-row" for="font-family"><span>正文字体</span><select id="font-family"><option value="auto">跟随皮肤</option><option value="system">系统字体</option><option value="hand">霞鹜文楷 · 手写</option><option value="serif">宋体 · 书卷</option></select></label>
+    <div class="setting-row"><span>文字大小</span><div class="font-options segmented"><button type="button" data-font="15">小</button><button type="button" data-font="16">标准</button><button type="button" data-font="18">大</button></div></div>
+    <label class="setting-row" for="solid-toggle"><span>减少透明效果</span><input id="solid-toggle" type="checkbox" role="switch"></label><p id="preference-message" class="settings-hint" role="status"></p>
+    <div class="format-separator"></div><h3>启动</h3>
+    <label class="setting-row"><span>登录后自动启动</span><input id="login-toggle" type="checkbox" role="switch"></label><p id="login-message" class="settings-hint" role="status"></p><div class="format-separator"></div><h3>关于 Jot</h3><div class="setting-row update-row"><span>版本 0.2.2</span><button id="check-updates" type="button" title="发现新版本后，可在应用内下载并安装">检查更新…</button></div></div>
+  </section>
+  <section id="help-panel" class="content-pane" aria-label="快捷键" hidden>
+    <header class="pane-head"><button type="button" class="icon-button" data-back aria-label="返回便签" title="返回便签 · Esc"><svg><use href="#i-back"/></svg></button><h2>快捷键</h2><span class="pane-head-hint">按你的习惯</span></header>
+    <div class="pane-body shortcuts-body">
+      <div class="shortcut-section-title"><h3>常用操作</h3><span>点击键帽修改</span></div>
+      <div id="editable-shortcuts" class="shortcut-group"></div>
+      <p id="shortcut-message" class="shortcut-message" role="status" aria-live="polite">应用内组合使用 ⌘⇧ 或 ⌘⌥ 加字母</p>
+      <details class="shortcut-details"><summary>标准编辑<span>保持熟悉的习惯</span></summary><dl class="shortcut-list">
+        <dt>选择格式</dt><dd><kbd>/</kbd></dd><dt>切换到指定页</dt><dd><kbd>⌘1–7</kbd></dd><dt>加粗 / 斜体</dt><dd><kbd>⌘B</kbd> <kbd>⌘I</kbd></dd><dt>新建无格式正文</dt><dd><kbd>⌘↵</kbd> <kbd>⇧↵</kbd></dd><dt>切换待办完成</dt><dd><kbd>⌘⇧↵</kbd></dd><dt>增加 / 减少缩进</dt><dd><kbd>Tab</kbd> <kbd>⇧Tab</kbd></dd><dt>全选</dt><dd><kbd>⌘A</kbd></dd><dt>撤销 / 重做</dt><dd><kbd>⌘Z</kbd> <kbd>⌘⇧Z</kbd></dd><dt>立即保存</dt><dd><kbd>⌘S</kbd></dd><dt>收起 / 退出</dt><dd><kbd>⌘W</kbd> <kbd>⌘Q</kbd></dd>
+      </dl></details>
+      <details class="shortcut-details"><summary>书写技巧<span>待办与换行</span></summary><ul class="writing-tips"><li><kbd>[] 空格</kbd><span>在行首创建待办</span></li><li><kbd>Enter</kbd><span>续写待办，空项再按一次退出列表</span></li><li><kbd>Esc</kbd><span>先返回上一级，再收起便签</span></li></ul></details>
+    </div>
+  </section>
+  <section id="backup-panel" class="content-pane" aria-label="备份与恢复" hidden><header class="pane-head"><button type="button" class="icon-button" data-back aria-label="返回便签操作"><svg><use href="#i-back"/></svg></button><h2>备份与恢复</h2></header><div class="pane-body"><h3>导出</h3><button id="backup-export" class="menu-action" type="button"><svg><use href="#i-archive"/></svg>导出完整备份…</button><p class="settings-hint">包含七页正文、格式和页名。</p><button id="export-all" class="menu-action" type="button"><svg><use href="#i-export"/></svg>导出七页 Markdown…</button><p class="settings-hint">每页一个文件，适合阅读和分享。</p><div class="format-separator"></div><h3>恢复</h3><button id="backup-import" class="menu-action" type="button"><svg><use href="#i-history"/></svg>选择备份文件…</button><p class="settings-hint">先预览内容，再决定是否替换。</p><button id="backup-undo" class="menu-action" type="button"><svg><use href="#i-history"/></svg>找回上次恢复前的内容…</button><p id="backup-message" class="settings-hint" role="status">使用上次恢复时自动保留的完整备份。</p></div><footer class="pane-foot"><span>内容只保存在这台 Mac</span></footer></section>
+  <section id="history-panel" class="content-pane" aria-labelledby="history-title" hidden><header class="pane-head"><button id="close-history" class="icon-button" type="button" aria-label="返回便签操作"><svg><use href="#i-back"/></svg></button><h2 id="history-title">历史版本</h2></header><div class="pane-body"><div class="history-summary"><span>当前页 · 最近 10 个版本</span><span>只读预览</span></div><div id="history-list" class="history-navigation"><button id="history-previous" class="icon-button" aria-label="上一个版本" type="button"><svg><use href="#i-back"/></svg></button><span id="history-date"></span><button id="history-next" class="icon-button" aria-label="下一个版本" type="button"><svg><use href="#i-next"/></svg></button></div><div id="history-preview" class="document-preview" aria-label="历史内容预览" tabindex="0"></div><p id="history-message" class="small-note" role="status"></p></div><footer class="pane-foot"><span>恢复只影响当前页</span><button id="restore-history" class="primary" type="button">恢复此版本…</button></footer></section>
+  <section id="archive-panel" class="content-pane" aria-labelledby="archive-title" hidden><header class="pane-head"><button id="archive-cancel" class="icon-button" type="button" aria-label="返回上一级"><svg><use href="#i-back"/></svg></button><h2 id="archive-title">预览完整备份</h2></header><div class="pane-body"><p id="archive-description" class="file-description"></p><div id="archive-pages"></div><div id="archive-document" class="document-preview" hidden tabindex="0" aria-label="备份单页预览"></div><p id="archive-message" class="small-note" role="status"></p></div><footer class="pane-foot"><button id="archive-reselect" class="text-button" type="button">返回备份与恢复</button><button id="archive-confirm" class="primary" type="button">恢复这份备份…</button></footer></section>
+  <section id="error-banner" class="error-banner" hidden aria-label="操作反馈"><strong id="error-heading">这次修改还没有保存</strong><p id="error-summary"></p><div class="error-actions"><button id="retry" type="button" hidden>重试保存</button><button id="banner-export" type="button">导出当前页…</button><button id="error-details-button" type="button" hidden>查看原因</button></div></section>
+  <div id="undo-toast" class="undo-toast" hidden role="status"><span id="undo-message"></span><button id="undo-clear" type="button">撤销</button></div>
+  <dialog id="error-dialog" aria-labelledby="error-title"><h2 id="error-title">操作需要处理</h2><p id="error-description"></p><p id="error-guidance"></p><div class="dialog-actions"><button id="error-close" type="button">关闭详情</button><button id="error-export" type="button">导出当前页…</button><button id="error-retry" type="button">重试</button></div></dialog>
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title"><h2 id="confirm-title"></h2><p id="confirm-description"></p><p id="confirm-error" role="status"></p><div class="dialog-actions"><button id="confirm-cancel" type="button" autofocus>取消</button><button id="confirm-accept" class="primary" type="button"></button></div></dialog>
+</section>
+<script src="demo.js"></script></body></html>

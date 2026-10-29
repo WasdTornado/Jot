@@ -1,0 +1,87 @@
+/* 外观只作用于显示层；正文、选区及 Markdown 结构由原编辑器管理。 */
+@font-face{font-family:"Jot WenKai";src:url('assets/fonts/LXGWWenKai-Regular.woff2') format('woff2');font-style:normal;font-weight:400;font-display:swap}
+#editor .tiptap{font-family:var(--note-font-family,var(--font-ui))}
+#font-family{max-width:180px;min-height:28px;padding:3px 6px;border:1px solid var(--separator);border-radius:6px;background:var(--popover);color:var(--text)}
+body[data-skin=grid]{--paper:#fafbf6;--popover:#fffffa;--text:#34464c;--text-secondary:#5d7076;--grid-line:#829dab22}
+body[data-skin=cream]{--paper:#fff8e9;--popover:#fffbf1;--text:#51483a;--text-secondary:#776750;--texture:#c6ac8420}
+body[data-skin=marker]{--paper:#fdfcf8;--popover:#fffefb;--text:#353c3a;--text-secondary:#696f65;--marker-title:#ead389;--marker-a:#efcda080;--marker-b:#b8d6ac80;--marker-c:#b4cfe480;--marker-d:#e1bad280}
+body.dark[data-skin=grid]{--paper:#252e32;--popover:#303b40;--text:#e6eeec;--text-secondary:#b1c2c5;--grid-line:#99bdc21c}
+body.dark[data-skin=cream]{--paper:#322d25;--popover:#40382e;--text:#f1e6d4;--text-secondary:#c9b89c;--texture:#e2cc9c10}
+body.dark[data-skin=marker]{--paper:#292d29;--popover:#343b35;--text:#eaf0e7;--text-secondary:#b9c5b4;--marker-title:#7c682e;--marker-a:#94704466;--marker-b:#63824d66;--marker-c:#47788d66;--marker-d:#955d7966}
+/* 纸张色由原生玻璃底层统一承载；纹理叠加不遮住桌面材质。 */
+body[data-skin=grid] .editor-shell{background-image:linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);background-size:18px 18px}
+body[data-skin=cream] .editor-shell{background-image:radial-gradient(var(--texture) .6px,transparent .6px);background-size:5px 5px}
+body[data-skin=grid] #editor input[type=checkbox]{border-radius:3px 5px 2px 4px;transform:rotate(-4deg)}
+body[data-skin=cream] #editor input[type=checkbox]{border-radius:50%}
+body[data-skin=marker] #editor input[type=checkbox]{border-radius:2px}
+/* 装饰占据正文之后的正常流空间，不覆盖文字，也不拦截鼠标或选区。 */
+body:not(.without-decorations)[data-skin=grid] .editor-shell::after{content:'';display:block;height:38px;background:url('assets/skins/leaf.svg') right bottom/60px 36px no-repeat;pointer-events:none}
+body:not(.without-decorations)[data-skin=cream] .editor-shell::after{content:'';display:block;height:66px;margin-top:12px;background:url('assets/skins/cat.svg') right bottom/65px 60px no-repeat,url('assets/skins/flower.svg') left bottom/32px 32px no-repeat;pointer-events:none}
+body.dark .editor-shell::after{opacity:.7}
+body:not(.without-decorations)[data-skin=marker] #editor :is(h1,h2,h3){text-decoration:underline;text-decoration-color:var(--marker-title);text-decoration-thickness:.32em;text-underline-offset:-.17em;text-decoration-skip-ink:none}
+body:not(.without-decorations)[data-skin=marker] #editor li[data-type=taskItem]{--highlight:var(--marker-a);border-bottom:1px dashed var(--separator);padding-bottom:3px}
+body:not(.without-decorations)[data-skin=marker] #editor li[data-type=taskItem]:nth-child(4n+2){--highlight:var(--marker-b)}
+body:not(.without-decorations)[data-skin=marker] #editor li[data-type=taskItem]:nth-child(4n+3){--highlight:var(--marker-c)}
+body:not(.without-decorations)[data-skin=marker] #editor li[data-type=taskItem]:nth-child(4n+4){--highlight:var(--marker-d)}
+body:not(.without-decorations)[data-skin=marker] #editor li[data-type=taskItem]>div>p{background-image:linear-gradient(transparent 67%,var(--highlight) 67% 92%,transparent 92%);background-size:100% 1.6em}
+@media(prefers-contrast:more){body[data-skin=grid]{--grid-line:transparent}body[data-skin=cream]{--texture:transparent}}
+
+/* 右下角皮肤抽屉：向上错落展开，留出左侧正文供实时预览。 */
+.toolbar-actions{display:flex;align-items:center;gap:2px}.toolbar-actions .icon-button{width:27px}
+.window-toolbar{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;padding-inline:16px}.window-toolbar>.page-tabs{justify-self:center}
+.skin-picker{right:18px;bottom:52px;width:184px;padding:10px 10px 7px;overflow:auto;max-height:calc(100% - 112px);border:1px solid var(--separator);transform-origin:82% 100%;animation:skin-open 210ms var(--ease-out)}
+.skin-picker-title{font-size:11px;color:var(--text-secondary);padding:2px 6px 8px}
+.skin-fan{display:flex;flex-direction:column;gap:3px;padding:2px 5px 3px}
+.skin-card{display:flex;align-items:center;gap:5px;text-align:left;min-height:32px;padding:4px 7px;border:1px solid var(--separator);border-radius:7px;background:var(--paper);font-size:12px;transform:translateX(calc((7 - var(--fan-index))*-.8px)) rotate(calc((var(--fan-index) - 3.5)*.35deg));transform-origin:right center;transition:transform 150ms var(--ease-out),background 120ms,border-color 120ms;box-shadow:0 1px 2px #2019230a}
+.skin-card>span:first-child{flex:1}.skin-card .skin-check{visibility:hidden;font-size:12px;font-weight:700}
+.skin-card[aria-pressed=true] .skin-check{visibility:visible}
+.skin-card:hover,.skin-card.is-preview,.skin-card:focus-visible{transform:translateX(-4px) rotate(0);border-color:var(--accent);background:var(--soft)}
+.skin-card[aria-pressed=true]{background:color-mix(in srgb,var(--accent) 14%,var(--popover));border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent)}
+#skin-preview-status{font-size:10px;color:var(--text-secondary);margin:8px 3px 0;text-align:center}
+.skin-swatch{display:block;flex-shrink:0;width:25px;height:24px;border:1px solid #bdb6a8;border-radius:3px;background:#faf7f2;box-shadow:0 1px 2px #342e3214}
+.swatch-grid{background:repeating-linear-gradient(0deg,transparent 0 4px,#8da8b944 4px 5px),repeating-linear-gradient(90deg,#fafbf6 0 4px,#8da8b944 4px 5px)}
+.swatch-cream{background:#fff1d5;border-top:4px solid #b7bd93}
+.swatch-marker{background:linear-gradient(transparent 25%,#b8d6ac 25% 40%,transparent 40% 55%,#efcda0 55% 70%,transparent 70%),#fffdf6}
+.swatch-mint{background:radial-gradient(ellipse at 80% 85%,#91b697 0 22%,transparent 25%),#e5f1e2;border-color:#92b196}
+.swatch-sakura{background:radial-gradient(circle at 80% 20%,#e2adc1 0 18%,transparent 20%),repeating-linear-gradient(transparent 0 6px,#dcb4c633 6px 7px),#fff0f3;border-color:#cca3b4}
+.swatch-manuscript{background:repeating-linear-gradient(0deg,transparent 0 5px,#b4a07c55 5px 6px),#f1e4c9;border-left:3px solid #b89069}
+.swatch-sea{background:linear-gradient(155deg,#edf7fb 40%,#c9e3ed 41% 61%,#e1f0f6 62%);border-color:#9abcca}
+@keyframes skin-open{from{opacity:0;transform:translateY(12px) scale(.93) rotate(2deg)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.skin-picker{animation:none}.skin-card{transition:none;transform:none}}
+@media(max-width:420px){.window-toolbar{grid-template-columns:30px minmax(0,1fr) 50px;padding-inline:10px}.toolbar-actions{gap:0}.toolbar-actions .icon-button{width:25px}.skin-picker{right:12px}}
+/* 深色选中态使用独立底色与实线，避免只靠微弱透明度区别。 */
+body.dark{--selected-surface:color-mix(in srgb,var(--accent) 27%,var(--popover));--selected-text:#fff9f5}
+body.dark .skin-card[aria-pressed=true]{background:var(--selected-surface);color:var(--selected-text);border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+body.dark .segmented button[aria-pressed=true],body.dark #pin-button[aria-pressed=true],body.dark .format-panel button[aria-pressed=true]{background:var(--selected-surface);color:var(--selected-text);box-shadow:inset 0 0 0 1px var(--accent)}
+body.dark ::selection{background:color-mix(in srgb,var(--accent) 48%,#342e32);color:#fff}
+#pin-button[aria-pressed=true]{background:var(--soft);color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent)}
+/* 四款新纸张；各自提供深浅两套色值，不依赖外部图片。 */
+body[data-skin=mint]{--paper:#f0f7ee;--popover:#f7fcf3;--text:#304a39;--text-secondary:#647b65;--ruling:#72967618}
+body.dark[data-skin=mint]{--paper:#25342d;--popover:#304238;--text:#e1f0df;--text-secondary:#b0c9b2;--ruling:#abc9ad18}
+body[data-skin=sakura]{--paper:#fff3f4;--popover:#fff9fa;--text:#593b4b;--text-secondary:#856575;--ruling:#bb8fa522}
+body.dark[data-skin=sakura]{--paper:#392a34;--popover:#483541;--text:#f7e2ed;--text-secondary:#d1b2c4;--ruling:#e0a9c41c}
+body[data-skin=manuscript]{--paper:#f6eddb;--popover:#fcf4e6;--text:#514532;--text-secondary:#7c6b50;--ruling:#9b866324}
+body.dark[data-skin=manuscript]{--paper:#332e25;--popover:#413a2f;--text:#f0e6d1;--text-secondary:#cdbb98;--ruling:#d9c49d1c}
+body[data-skin=sea]{--paper:#f0f7fb;--popover:#f9fcff;--text:#304d60;--text-secondary:#627e90;--ruling:#73a3bd1c}
+body.dark[data-skin=sea]{--paper:#202e3c;--popover:#2b3c4d;--text:#e0eef8;--text-secondary:#abc5d9;--ruling:#96bed51c}
+body[data-skin=mint] .editor-shell{background-image:radial-gradient(var(--ruling) 1px,transparent 1px);background-size:12px 12px}
+body[data-skin=sakura] .editor-shell{background-image:repeating-linear-gradient(transparent 0 25px,var(--ruling) 25px 26px)}
+body[data-skin=manuscript] .editor-shell{background-image:linear-gradient(90deg,transparent 15px,var(--ruling) 15px 16px,transparent 16px),repeating-linear-gradient(transparent 0 25px,var(--ruling) 25px 26px)}
+body[data-skin=sea] .editor-shell{background-image:linear-gradient(155deg,transparent 45%,var(--ruling) 100%)}
+body[data-skin=mint] #editor input[type=checkbox]{border-radius:3px 7px 3px 7px}
+body[data-skin=sakura] #editor input[type=checkbox]{border-radius:50%}
+body[data-skin=manuscript] #editor input[type=checkbox]{border-radius:1px}
+body:not(.without-decorations)[data-skin=mint] .editor-shell::after{content:'';display:block;height:54px;margin-top:14px;background:url('assets/skins/leaf.svg') right bottom/90px 50px no-repeat;pointer-events:none}
+body:not(.without-decorations)[data-skin=sakura] .editor-shell::after{content:'';display:block;height:40px;margin-top:12px;background:radial-gradient(ellipse at 70% 30%,#c58ba880 0 4px,transparent 5px),radial-gradient(ellipse at 82% 70%,#d5abc580 0 5px,transparent 6px),radial-gradient(ellipse at 94% 20%,#c58ba880 0 4px,transparent 5px);pointer-events:none}
+body:not(.without-decorations)[data-skin=sea] .editor-shell::after{content:'';display:block;height:32px;margin:18px 0 0 auto;width:95px;border-top:2px solid var(--ruling);border-radius:50%;box-shadow:0 -7px 0 -5px var(--ruling),0 -14px 0 -11px var(--ruling);pointer-events:none}
+@media(prefers-contrast:more){body{--ruling:transparent}}
+
+.toolbar-actions{grid-column:3;justify-self:end}
+.skin-picker{user-select:none;-webkit-user-select:none}
+@media(prefers-contrast:more){body[data-skin]{--ruling:transparent}}
+
+/* 小窗口只滚动主题列表，标题、提示与当前选项保持可达。 */
+.skin-picker{display:flex;flex-direction:column;overflow:hidden}
+.skin-picker-title,#skin-preview-status{flex-shrink:0}
+.skin-fan{min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--separator) transparent}
+.skin-card{flex-shrink:0}

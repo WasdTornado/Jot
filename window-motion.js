@@ -1,4 +1,6 @@
 const $ = id => document.getElementById(id);
+// 内嵌宽度决定控制区是否换行，向官网报告真实高度以免底部动作被裁掉。
+new ResizeObserver(() => parent.postMessage({type:'jot-motion-height',height:Math.ceil(document.querySelector('main').getBoundingClientRect().height)},location.origin)).observe(document.querySelector('main'));
 const desk=$('desktop'), note=$('note'), top=$('drag-top'), neck=$('neck'), remnant=$('remnant'), tear=$('tear');
 let mode='docked', x=0,y=0, scale=1, anchor={x:0,y:0}, home={x:0,y:0}, job=0, drag=null, pinned=false, priorPin=false;
 let flight=null;
@@ -27,17 +29,22 @@ function geometry(){
   scale=Math.min(1,(d.width-30)/440);
   // 网页演示共享菜单栏锚点；应用以真实菜单栏坐标为准。
   const iconCenter=icon.left-d.left+icon.width/2;
-  anchor={x:iconCenter,y:47};
+  anchor={x:iconCenter,y:63-10*scale};
   home={x:clamp(iconCenter-220*scale,14,d.width-440*scale-14),y:63};
   anchor.x=clamp(anchor.x,home.x+25*scale,home.x+415*scale);
   if(mode==='docked'){x=home.x;y=home.y;} else {x=clamp(x,10,d.width-440*scale-10);y=clamp(y,45,d.height-422*scale-15);}
   paint();connection();
 }
+// 与原生便签采用相同的圆润肩部和轻圆角尖端。
+function pointerPath(tip,base,w){
+ const h=tip.y-base.y;
+ return `M ${base.x-w} ${base.y} C ${base.x-w*.55} ${base.y} ${tip.x-w*.38} ${base.y+h*.84} ${tip.x-w*.2} ${base.y+h*.9} C ${tip.x-w*.08} ${tip.y+h*.03} ${tip.x+w*.08} ${tip.y+h*.03} ${tip.x+w*.2} ${base.y+h*.9} C ${tip.x+w*.38} ${base.y+h*.84} ${base.x+w*.55} ${base.y} ${base.x+w} ${base.y} Z`;
+}
 function connection(amount=1){
   if(mode==='floating' || amount<=0){neck.setAttribute('d','');return;}
   const baseX=x+(anchor.x-home.x), baseY=y+1;
-  const half=11*scale;
-  neck.setAttribute('d',`M ${anchor.x} ${anchor.y} L ${baseX-half} ${baseY} L ${baseX+half} ${baseY} Z`);
+  const half=14*scale;
+  neck.setAttribute('d',pointerPath(anchor,{x:baseX,y:baseY},half));
   neck.style.opacity=amount;
 }
 function stop(){cancelAnimationFrame(job);job=0;clearFlight();remnant.setAttribute('d','');tear.setAttribute('d','');$('status-icon').style.transform='';note.style.opacity='1';paint();}
@@ -54,9 +61,9 @@ function snap(){
   if(reduced){paint();return;}
   const render=t=>{
     const r=Math.exp(-6*t)*Math.sin(t*13), remaining=(1-t)**3;
-    remnant.setAttribute('d',`M ${ax-4*remaining} ${anchor.y} L ${ax} ${anchor.y+26*remaining} L ${ax+4*remaining} ${anchor.y} Z`);
+    remnant.setAttribute('d',pointerPath({x:ax,y:anchor.y+26*remaining},{x:ax,y:anchor.y},7*remaining));
     // 下半段属于便签自身，继续拖动和缩放时不再滞留于断开瞬间的桌面坐标。
-    tear.setAttribute('d',`M ${localX-11*remaining} 1 L ${localX} ${-22*remaining} L ${localX+11*remaining} 1 Z`);
+    tear.setAttribute('d',pointerPath({x:localX,y:-10*remaining},{x:localX,y:1},14*remaining));
     paint(1+r*.008,1-r*.009);
   };
   render(0);animate(420,render,()=>{flat();paint();});
@@ -137,18 +144,11 @@ function recall(){
 function closeNote(){stop();note.hidden=true;flat();announce('已收起 · 点击菜单栏 Jot 图标打开');}
 function toggle(){if(mode==='docked')detachClick();else recall();}
 $('mode').addEventListener('click',toggle);
-$('close-note').addEventListener('click',closeNote);
-$('pin').addEventListener('click',()=>setPin(!pinned));
 $('status-icon').addEventListener('click',()=>{if(note.hidden){note.hidden=false;reset();}else recall();});
 $('reset').addEventListener('click',reset);
-$('find').addEventListener('click',()=>{note.querySelector('.writing').focus();announce('可直接选中或编辑示例文字；刷新后重置');});
-$('more').addEventListener('click',closeNote);
 $('dark').addEventListener('change',e=>document.body.classList.toggle('dark',e.target.checked));
 $('reduced').addEventListener('change',e=>{reduced=e.target.checked;reset();});
 matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',e=>{reduced=e.matches;$('reduced').checked=reduced;reset();});
-document.querySelectorAll('.dots button').forEach((button,i)=>button.addEventListener('click',()=>{
-  document.querySelectorAll('.dots button').forEach(b=>{b.classList.remove('selected');b.removeAttribute('aria-current');});button.classList.add('selected');button.setAttribute('aria-current','page');$('page-title').textContent=button.getAttribute('aria-label');$('page-number').textContent=String(i+1).padStart(2,'0');
-}));
 top.addEventListener('pointerdown',e=>{
   if(e.button!==0||e.target.closest('button'))return;
   stop();if(mode==='docked'){x=home.x;y=home.y;paint();connection();}

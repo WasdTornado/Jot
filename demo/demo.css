@@ -1,0 +1,8 @@
+/* 官网只补网页材质底层和窄屏适配，应用组件样式直接随构建同步。 */
+html{min-width:280px;background:radial-gradient(ellipse at 10% 10%,#bcd7d4,transparent 58%),radial-gradient(ellipse at 95% 80%,#e5cad9,transparent 65%),#eee8dd}
+body{min-width:280px;padding:0}
+.note-window{background-color:color-mix(in srgb,var(--paper) 78%,transparent);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+body.dark .note-window{background-color:color-mix(in srgb,var(--paper) 86%,transparent)}
+body.solid .note-window{background:var(--paper);backdrop-filter:none}
+body.demo-hidden .note-window{visibility:hidden}
+@media(max-width:400px){.window-toolbar{padding:0 9px}.page-tabs{gap:0;--tab-step:26px}.page-tab{width:26px}.page-track{left:9px}.toolbar-leading,.toolbar-actions{gap:0}.icon-button{width:26px}.page-tab::before{width:17px;height:17px}#pin-button{display:none}}

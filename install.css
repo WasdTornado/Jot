@@ -1,6 +1,4 @@
-/* 安装说明沿用浮游的纸色与文字层级，状态说明始终可见。 */
-.preview-label{display:inline-block;width:fit-content;padding:7px 12px;border:1px solid #d3c8a4;border-radius:999px;background:#f3edda;color:#66552a;font-size:12px;line-height:1.5}
-.get-action .preview-label{margin-bottom:14px}
+/* 安装说明沿用浮游的纸色与文字层级。 */
 .get-action .release{display:block;width:fit-content}
 .install-overview{padding:48px 0 70px;border-top:1px solid var(--line)}
 .install-overview h2{font-size:clamp(23px,3vw,34px);margin:12px 0}
@@ -17,7 +15,6 @@
 .download-intro .eyebrow{justify-content:center}
 .download-intro h1{font-size:clamp(30px,4.5vw,52px);line-height:1.3;letter-spacing:-.04em;margin:16px 0}
 .download-lede{font-size:16px;color:var(--muted);margin-bottom:24px}
-.preview-description{font-size:14px;line-height:1.8;color:var(--muted);margin:16px auto 24px;max-width:600px}
 .download-button{display:inline-flex}
 .download-meta{font-size:12px;color:var(--muted);margin:14px 0 20px}
 .download-links{display:flex;justify-content:center;gap:22px;flex-wrap:wrap}
@@ -31,3 +28,20 @@
 .download-section .faq{margin-bottom:24px}
 .download-page a:focus-visible{outline:2px solid #486543;outline-offset:5px}
 @media(max-width:640px){.install-steps{grid-template-columns:1fr;gap:24px}.install-steps>li{padding-left:36px;position:relative}.install-steps>li:before{position:absolute;left:0;top:4px}.download-intro{padding:36px 0 40px}.download-links{gap:14px}.download-section{padding:30px 0}.download-button{max-width:100%;font-size:14px}.download-page footer{gap:16px;flex-wrap:wrap}.download-page .nav-action{font-size:12px}.download-meta{line-height:1.8}.preview-description br{display:none}}
+
+/* 安装与系统放行使用用户提供的真实截图，可独立放大查看。 */
+.orbit .brand .brand-cn{font:500 13px/1.2 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;letter-spacing:.12em;margin-left:12px;color:var(--muted)}
+.install-visual{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;margin:32px 0}
+.install-visual>li:before{display:none}
+.install-shot{height:390px;margin:0 0 20px;background:#e7ecdf;border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.install-shot .install-zoom{display:block;flex:1;min-height:0;cursor:zoom-in}.install-shot .install-zoom:focus-visible{outline:2px solid #486543;outline-offset:-4px}.install-shot .install-zoom img{width:100%;height:100%;object-fit:contain;padding:12px 4px 0}
+.install-shot figcaption{margin-top:auto;min-height:32px;padding:8px 12px;color:var(--muted);font-size:10px;line-height:1.6;display:flex;justify-content:space-between;gap:8px;background:#f7f9f28c}
+.install-shot figcaption span{color:var(--ink)}
+.install-step-copy{display:flex;gap:12px;align-items:baseline}
+.install-step-copy .step-number{font:12px/1.6 ui-monospace,monospace;color:var(--muted);flex-shrink:0}
+.install-visual strong{font-size:16px}
+.install-visual p{font-size:14px;line-height:1.8;margin-top:8px}
+@media(max-width:900px){.install-visual{grid-template-columns:1fr;gap:24px}.install-visual>li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:center;padding-left:0}.install-shot{margin:0}.install-step-copy{align-items:baseline}}
+@media(max-width:520px){.install-visual>li{grid-template-columns:1fr;gap:18px}.install-shot{height:310px}.install-visual p{font-size:15px}.orbit .brand .brand-cn{font-size:12px;margin-left:10px}}
+
+.install-finish{font-size:14px;line-height:1.8;color:var(--muted);margin:0 0 24px}.install-visual p b{font-weight:550;color:var(--ink)}

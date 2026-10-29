@@ -49,9 +49,8 @@
   }
   gather.addEventListener('click', () => setGathered(!garden.classList.contains('gathered')));
   function openPage(index) {
-    document.querySelectorAll('.page-dots button')[index].click();
+    window.openJotDemo(index);
     document.querySelector('#demo').scrollIntoView({ behavior: canMove() ? 'smooth' : 'instant', block: 'start' });
-    document.querySelector('#demo-input').focus({ preventScroll: true });
   }
   cards.forEach(card => {
     card.addEventListener('click', () => openPage(Number(card.dataset.thought)));
