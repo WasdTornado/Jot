@@ -21,6 +21,7 @@
   }
   function updateMotion() {
     root.dataset.motion = canMove() ? 'on' : 'off';
+    document.querySelector('#window-motion-demo')?.contentWindow?.postMessage({type:'jot-motion',enabled:canMove()},location.origin);
     toggle.disabled = reduce.matches;
     toggle.textContent = reduce.matches ? '已减少动态' : enabled ? '暂停动效' : '启用动效';
     toggle.setAttribute('aria-pressed', String(canMove()));
@@ -32,6 +33,7 @@
   toggle.addEventListener('click', () => { enabled = !enabled; updateMotion(); });
   reduce.addEventListener('change', () => { enabled = !reduce.matches; updateMotion(); });
   updateMotion();
+  document.querySelector('#window-motion-demo')?.addEventListener('load',updateMotion);
   // 入场不绑定滚动，不阻止书写；系统减少动态时直接显示最终状态。
   play(document.querySelector('.intro-title'), [{opacity:0,transform:'translateY(18px)'},{opacity:1,transform:'none'}], 0, 720);
   cards.forEach((card, index) => {

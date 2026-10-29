@@ -39,6 +39,13 @@ import Carbon
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
             button.target = self; button.action = #selector(toggleNote)
         }
+        controller.onDockPulse = { [weak self] in
+            guard let button = self?.statusItem.button, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
+            button.wantsLayer = true
+            let pulse = CAKeyframeAnimation(keyPath: "transform.scale")
+            pulse.values = [1, 1.05, 1]; pulse.keyTimes = [0, 0.45, 1]; pulse.duration = 0.26
+            button.layer?.add(pulse, forKey: "jotDockPulse")
+        }
         controller.bridge.onHotKey = { [weak self] key in
             guard let self else { throw NoteError.invalidDocument }
             // 用户可以把旧的追加组合键改作普通呼出键；失败时还原旧的追加注册。

@@ -27,6 +27,8 @@ const retry = document.querySelector<HTMLButtonElement>('#retry')!;
 const exportButton = document.querySelector<HTMLButtonElement>('#export')!;
 const hint = document.querySelector<HTMLDivElement>('#hint')!;
 const count = document.querySelector<HTMLSpanElement>('#word-count')!;
+let dragRegionQueued = false;
+const windowMode = document.querySelector<HTMLButtonElement>('#window-mode')!;
 const pin = document.querySelector<HTMLButtonElement>('#pin-button')!;
 const tabs = document.querySelector<HTMLElement>('.page-tabs')!;
 const bridge = new NativeBridge(message => {
@@ -120,6 +122,8 @@ function renderAppearance(): void {
     button.setAttribute('aria-label', `第 ${index + 1} 页 · ${pageName(settings, pages[index].id)} · ${title}`);
   });
   document.querySelector('#hotkey-label')!.textContent = settings.hotKey.label;
+  document.body.classList.toggle('pinned', settings.pinned);
+  scheduleDragRegion();
   pin.setAttribute('aria-pressed', String(settings.pinned));
   pin.setAttribute('aria-label', settings.pinned ? '取消置顶' : '置顶便签'); pin.title = settings.pinned ? '取消置顶' : '置顶便签';
 
@@ -419,9 +423,13 @@ bridge.onCommand = message => {
     document.querySelector('#hotkey-message')!.textContent = '按下新组合键（含 ⌘、⌃ 或 ⌥），Esc 取消';
   } else if (message.type === 'nativeSettings') {
     const native = message.settings as AppSettings;
-    settings.windowWidth = native.windowWidth; settings.windowHeight = native.windowHeight; settings.hotKey = native.hotKey; renderAppearance();
-  } else if (message.type === 'requestExport') void exportNote().catch(showError);
-  else if (message.type === 'focusEditor' && !busy() && !surfaces.current && !search.isOpen) workspace.active?.editor.commands.focus(undefined, { scrollIntoView: false });
+    settings.pinned = native.pinned; settings.windowWidth = native.windowWidth; settings.windowHeight = native.windowHeight; settings.hotKey = native.hotKey; renderAppearance();
+  } else if (message.type === 'windowMode') { renderWindowMode(message.floating === true, message.busy === true); }
+  else if (message.type === 'requestExport') void exportNote().catch(showError);
+  else if (message.type === 'focusEditor') {
+    scheduleDragRegion();
+    if (!busy() && !surfaces.current && !search.isOpen) workspace.active?.editor.commands.focus(undefined, { scrollIntoView: false });
+  }
   else if (message.type === 'selectPage' && typeof message.index === 'number' && pages[message.index]) void selectPage(pages[message.index].id);
   else if (message.type === 'environment') {
     systemDark = message.dark === true; systemSolid = message.reduceTransparency === true; renderAppearance();
@@ -431,8 +439,8 @@ async function loadNote(): Promise<void> {
   initialLoading = true; loadFailed = false; operationError = undefined; retry.hidden = true;
   tabs.querySelectorAll<HTMLButtonElement>('button').forEach(button => { button.disabled = true; });
   try {
-    const result = await bridge.request<LoadedPage & { settings?: AppSettings; hotKeyError?: string; appendShortcut?: string }>('ready');
-    settings = { ...defaultSettings, ...result.settings }; renderAppearance();
+    const result = await bridge.request<LoadedPage & { settings?: AppSettings; hotKeyError?: string; appendShortcut?: string; floating?: boolean }>('ready');
+    settings = { ...defaultSettings, ...result.settings }; renderAppearance(); renderWindowMode(result.floating === true);
     document.querySelector('#hotkey-message')!.textContent = result.hotKeyError ?? '';
     if (result.appendShortcut) document.querySelector('#append-shortcut')!.textContent = result.appendShortcut;
     await workspace.activate(settings.pageID, result);
@@ -572,3 +580,37 @@ document.querySelector('#login-toggle')!.addEventListener('change', event => {
   });
 });
 renderAppearance(); void loadNote();
+
+function renderWindowMode(floating: boolean, busy = false): void {
+  windowMode.setAttribute('aria-pressed', String(floating)); windowMode.disabled = busy;
+  windowMode.title = floating ? '自由移动 · 点击回到菜单栏' : '跟随菜单栏 · 点击切换为自由移动';
+  windowMode.setAttribute('aria-label', windowMode.title);
+  windowMode.querySelector('use')!.setAttribute('href', floating ? '#i-floating' : '#i-docked');
+}
+windowMode.addEventListener('click', () => {
+  if (busy()) return;
+  void preferenceQueue.then(() => bridge.request('toggleWindowMode')).catch(showError);
+});
+
+// 网页只报告空白热区的位置；拖动完全由原生窗口处理，避免跨桥逐帧移动。
+function scheduleDragRegion(): void {
+  if (dragRegionQueued) return;
+  dragRegionQueued = true;
+  // 隐藏或刚恢复的 WKWebView 可能暂停动画帧；热区同步不能依赖绘制循环。
+  queueMicrotask(() => {
+    dragRegionQueued = false;
+    const region = document.querySelector<HTMLElement>('#window-drag-region')!;
+    const rect = region.getBoundingClientRect();
+    const visible = !region.hidden && !document.querySelector('.note-window')!.classList.contains('has-pane') && !surfaces.current;
+    const controls = Array.from(region.querySelectorAll<HTMLElement>('.toolbar-leading,.page-tabs,.toolbar-actions')).map(element => {
+      const box = element.getBoundingClientRect(); return { x: box.x, y: box.y, width: box.width, height: box.height };
+    });
+    void bridge.request('windowDragRegion', visible ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height, controls } : null).catch(() => {});
+  });
+}
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(scheduleDragRegion).observe(document.querySelector('.window-toolbar')!);
+new MutationObserver(scheduleDragRegion).observe(document.querySelector('.note-window')!, { attributes: true, attributeFilter: ['class'] });
+const previousSurfaceClose = surfaces.onClose;
+surfaces.onClose = id => { previousSurfaceClose?.(id); scheduleDragRegion(); };
+// 弹出菜单不改变窗口几何，也必须及时移除覆盖其上的原生热区。
+new MutationObserver(scheduleDragRegion).observe(document.querySelector('.note-window')!, { subtree: true, attributes: true, attributeFilter: ['hidden'] });

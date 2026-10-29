@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jot · 轻轻拉开，自在停留</title>
+<link rel="stylesheet" href="motion.css">
+<body>
+<svg class="symbols" aria-hidden="true"><defs>
+<symbol id="docked" viewBox="0 0 24 24"><path d="M3 4h18M10 4v3l-2 3h8l-2-3V4M6 10h12a1 1 0 0 1 1 1v9H5v-9a1 1 0 0 1 1-1Z"/></symbol>
+<symbol id="floating" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M12 1v3m-2-1 2-2 2 2M12 20v3m-2-2 2 2 2-2M1 12h3m-1-2-2 2 2 2m17-2h3m-2-2 2 2-2 2"/></symbol>
+<symbol id="pin" viewBox="0 0 24 24"><path d="M8 3h8l-1 5 3 4v2H6v-2l3-4-1-5Zm4 11v7"/></symbol>
+<symbol id="search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></symbol>
+<symbol id="logo" viewBox="0 0 24 24"><path d="M7 3h11a2 2 0 0 1 2 2v16H7ZM4 6H2l2 14h3M11 9h5M11 13h5"/><circle cx="11" cy="6" r=".5"/></symbol>
+<symbol id="play" viewBox="0 0 24 24"><path d="m9 5 10 7-10 7Z"/></symbol>
+</defs></svg>
+<header class="page-header"><a class="brand" href="#"><svg><use href="#logo"/></svg>Jot <span>/ 交互研究</span></a><span class="edition">WINDOW MOTION · 03 <i></i> 设计样稿</span></header>
+<main>
+<section class="intro"><div><p class="eyebrow">ATTACHED. UNTIL YOU LET GO.</p><h1>轻轻拉开，<em>自在停留。</em></h1><p class="lede">像从菜单栏摘下一张便签。用完，再轻轻送它回去。</p></div><div class="intro-note">取消额外的拖动横杠。<br>让顶部本身，成为手势的起点。</div></section>
+<section class="workbench" aria-label="可操作的桌面交互样稿">
+<div class="desktop-wrap">
+<div class="desktop" id="desktop">
+<div class="wallpaper-word" aria-hidden="true">A little<br>room to think.</div>
+<div class="desktop-caption">Jot · 你的纸上小世界</div>
+<div class="menubar"><div><b>Jot</b><span>文件</span><span>编辑</span></div><div><button id="status-icon" aria-label="打开便签 / 回到菜单栏" title="Jot"><svg><use href="#logo"/></svg></button><span>周四 10:24</span><span class="battery" aria-hidden="true"></span></div></div>
+<svg id="liquid" aria-hidden="true"><path id="neck"/><path id="remnant"/></svg>
+<article class="note" id="note" aria-label="交互样稿便签">
+<svg class="tear-layer" aria-hidden="true"><path id="tear"/></svg>
+<header class="note-header" id="drag-top" tabindex="0" aria-label="拖动便签；浮动时也可用方向键移动">
+<button id="close-note" class="icon" aria-label="关闭便签" title="收起便签 · Esc"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+<button id="mode" class="icon mode" aria-label="当前跟随菜单栏，点击切换自由拖拽" title="跟随菜单栏 · 点击自由拖拽"><svg><use href="#docked"/></svg><span class="tooltip">跟随菜单栏 · 点击自由拖拽</span></button>
+<nav class="dots" aria-label="七页便签"><button aria-label="灵感" style="--dot:#b99129"></button><button aria-label="工作" style="--dot:#bd7d51"></button><button aria-label="日常" style="--dot:#bf586e"></button><button aria-label="阅读" style="--dot:#a184b8"></button><button aria-label="草稿" style="--dot:#929097"></button><button class="selected" aria-label="随想" aria-current="page" style="--dot:#448c98"></button><button aria-label="生活" style="--dot:#7e9861"></button></nav>
+<button id="pin" class="icon" aria-label="置顶便签" aria-pressed="false" title="置顶仅控制窗口层级"><svg><use href="#pin"/></svg></button>
+<button id="find" class="icon" aria-label="查找示例文字" title="查找"><svg><use href="#search"/></svg></button>
+</header>
+<div class="page-label"><span id="page-number">06</span><i></i><span id="page-title">随想</span></div>
+<div class="writing" contenteditable="true" spellcheck="false" role="textbox" aria-label="示例便签，可输入但不会保存" aria-multiline="true"><p class="note-title">留一点空间，给突然的灵感。</p><p>想到什么，随手记下来。<br>也可以把这张便签，放在顺手的地方。</p><p class="todo"><span contenteditable="false">✓</span> 给今天留一个小小的空白</p><p class="todo"><span contenteditable="false"></span> 去窗边，看一会儿云</p><blockquote>不急着整理，先让想法落在这里。</blockquote></div>
+<footer><span><i></i> 演示便签 <b>· 不会保存</b></span><div><svg><use href="#logo"/></svg><span>Aa</span><button id="more" class="icon" aria-label="收起示例便签" title="收起便签 · Esc">···</button></div></footer>
+</article>
+<div id="gesture-hint">在便签顶部的空白处向下拖动 <span>↓</span></div>
+</div>
+<div class="stage-footer"><span><i id="state-dot"></i><span id="state" role="status" aria-live="polite">跟随菜单栏</span></span><button id="reset">重置位置 ↺</button></div>
+</div>
+<aside class="controls"><p class="eyebrow">FEEL THE DIFFERENCE</p><h2>每一步，亲手试试。</h2><p class="control-intro">直接拖动左侧便签，或播放下面的动作。动效都在同一张便签上发生。</p>
+<button class="scene active" data-scene="detach"><span class="scene-no">01</span><span><strong>拉开与脱离</strong><small>三角拉长 → 断开 → 贴边收回</small></span><svg><use href="#play"/></svg></button>
+<button class="scene" data-scene="rebound"><span class="scene-no">02</span><span><strong>轻拉后松手</strong><small>没有拉够距离，柔软地回到原位</small></span><svg><use href="#play"/></svg></button>
+<button class="scene" data-scene="return"><span class="scene-no">03</span><span><strong>吸回菜单栏</strong><small>如 macOS 神奇效果：收拢吸入 ↔ 舒展</small></span><svg><use href="#play"/></svg></button>
+<div class="playback"><label><input id="slow" type="checkbox">慢放 × 0.4</label><label><input id="dark" type="checkbox">深色外观</label><label><input id="reduced" type="checkbox">减少动态效果</label></div>
+<div class="mode-key"><p>一个位置，两种状态</p><div><svg><use href="#docked"/></svg><span><b>跟随菜单栏</b><small>小窗连着上方横线</small></span></div><div><svg><use href="#floating"/></svg><span><b>自由拖拽</b><small>四向箭头表达移动</small></span></div></div>
+<p class="tiny">图标显示当前模式，悬停提示下一步操作。<br>右侧图钉只负责置顶，不与模式开关重复。</p>
+</aside></section>
+<section class="motion-notes"><div><span>01 / 跟手</span><h3>手势先于动画</h3><p>向下拉时连接实时形变。松手前不会被动播放一整段；断开后继续跟着鼠标走。</p></div><div><span>02 / 分寸</span><h3>柔软，而不晃动</h3><p>弹性集中在连接处和释放瞬间。拖动时正文保持完整；归位时整张纸沿曲面收拢。</p></div><div><span>03 / 归属</span><h3>回到同一个起点</h3><p>纸张朝菜单栏图标收成漏斗，连续吸入。展开沿同一形变反向舒展，中间没有刻意停顿。</p></div></section>
+<div class="review-note">本页仅用于确认交互与视觉。原生应用、官网与更新源尚未修改；屏幕跨窗合成效果需要在原生实现阶段另行验证。</div>
+</main><script type="module" src="motion.js"></script>
+</body></html>

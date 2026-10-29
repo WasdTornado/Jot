@@ -2,6 +2,45 @@ import AppKit
 import WebKit
 
 @MainActor func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap { descendants($0) } }
+@MainActor func checkPointerSeam() {
+    let surface = GlassSurface(frame: NSRect(x: 0, y: 0, width: 480, height: 478))
+    for x in [80, 240, 400] {
+        for height in [2, 5, 10] {
+            surface.pointerX = CGFloat(x); surface.pointerHeight = CGFloat(height); surface.layout()
+            let bitmap = NSBitmapImageRep(data: surface.material.maskImage!.tiffRepresentation!)!
+            // 顶部 10 pt 是尖角区；接缝两侧应为连续不透明纸张。
+            guard (10...11).allSatisfy({ bitmap.colorAt(x: x, y: $0)!.alphaComponent > 0.99 }) else {
+                print("FAIL：三角尖角与纸张连接处出现透明缝"); exit(1)
+            }
+        }
+    }
+    print("PASS：不同位置和回缩高度下，尖角与纸张连续不透明")
+}
+@MainActor func checkMotionOverlays() {
+    let overlay = WindowMotionOverlay(level: .floating)
+    defer { overlay.close() }
+    let panels = NSApp.windows.filter { $0.identifier?.rawValue == "JotMotion" }
+    guard panels.count == NSScreen.screens.count,
+          panels.allSatisfy({ panel in NSScreen.screens.contains { $0.frame == panel.frame } }) else {
+        print("FAIL：动效图层没有逐屏覆盖，会被独立 Space 裁剪"); exit(1)
+    }
+    let bitmap = CGContext(data: nil, width: 480, height: 468, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    bitmap.setFillColor(NSColor.red.cgColor); bitmap.fill(CGRect(x: 0, y: 0, width: 480, height: 468))
+    overlay.prepare(image: bitmap.makeImage()!, size: CGSize(width: 480, height: 468))
+    let origin = CGRect(x: 200, y: 100, width: 480, height: 468)
+    overlay.genie(progress: 0, origin: origin, target: CGPoint(x: 400, y: 900))
+    for panel in panels {
+        guard let view = panel.contentView, view.isFlipped, let root = view.layer,
+              root.bounds.size == panel.frame.size, let first = root.sublayers?.dropFirst().first,
+              abs(first.frame.minX - (origin.minX - panel.frame.minX)) < 0.01,
+              abs(first.frame.minY - (panel.frame.maxY - origin.maxY)) < 0.01 else {
+            print("FAIL：真实 AppKit 图层与便签坐标不一致"); exit(1)
+        }
+    }
+    overlay.close()
+    guard panels.allSatisfy({ !$0.isVisible }) else { print("FAIL：动画结束后残留覆盖层"); exit(1) }
+    print("PASS：逐屏动画图层、真实纸张位置和清理行为正确")
+}
 @MainActor func checkSelectAllRouting(_ view: NoteWebView, in window: NSWindow) {
     let original = view.onSelectAll
     var calls = 0
@@ -30,6 +69,8 @@ import WebKit
 }
 MainActor.assumeIsolated {
     NSApplication.shared.setActivationPolicy(.prohibited)
+    checkPointerSeam()
+    checkMotionOverlays()
     let controller = WindowController()
     checkSelectAllRouting(controller.bridge.webView, in: controller.window)
     print("PASS：正文 ⌘A 使用统一入口，其他快捷键和原生输入框不被截获")

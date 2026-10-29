@@ -102,3 +102,9 @@ dialog{width:calc(100% - 58px);max-height:calc(100% - 48px);padding:24px;border:
 /* 斜杠菜单跟随光标浮出，长列表内部滚动，不占正文空间。 */
 .slash-menu{position:fixed;z-index:40;display:flex;flex-direction:column;padding:5px;background:var(--popover);color:var(--text);border-radius:11px;box-shadow:var(--panel-shadow);overflow:hidden;font-size:13px;animation:popover-in 120ms var(--ease-out)}
 .slash-title{font-size:11px;color:var(--text-secondary);padding:6px 9px}.slash-options{position:relative;overflow:auto;min-height:0;scrollbar-width:thin}.slash-option{display:flex;align-items:center;gap:10px;min-height:32px;width:100%;padding:5px 9px;border-radius:6px;text-align:left}.slash-option[aria-selected=true]{background:var(--soft);color:var(--accent)}.slash-glyph{width:24px;display:flex;justify-content:center;font-size:13px;font-weight:550}.slash-glyph svg{width:16px;height:16px}.slash-footer{flex-shrink:0;border-top:1px solid var(--separator);padding:7px 8px 3px;font-size:10px;color:var(--text-secondary)}.slash-empty{padding:10px;font-size:12px;color:var(--text-secondary)}
+
+/* 为原生拖动柄预留空白，长页名与完成统计都不能侵入热区。 */
+.toolbar-leading,.toolbar-actions{display:flex;align-items:center;gap:0}
+#window-mode[aria-pressed="true"]{color:var(--accent)}
+#window-mode:disabled{opacity:.55}
+.window-toolbar{cursor:grab}.window-toolbar button,.window-toolbar nav{cursor:default}

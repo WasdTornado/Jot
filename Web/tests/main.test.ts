@@ -488,3 +488,63 @@ test('皮肤预览可用方向键浏览，切换面板或窗口失焦会取消�
   expect(panel.hidden).toBe(true); expect(document.body.dataset.skin).toBe('default');
   expect(saved).toHaveLength(0);
 });
+
+test('启动恢复置顶且动画帧暂停时仍报告热区，重新呼出时刷新位置', async () => {
+  const regions: unknown[] = [];
+  const frame = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+  const bounds = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(180, 52, 100, 26));
+  try {
+    await openNote(null, message => {
+      if (message.type === 'windowDragRegion') regions.push(message.payload);
+      if (message.type !== 'ready') return false;
+      queueMicrotask(() => window.totNotes.receive({ type: 'result', requestID: message.requestID, ok: true,
+        payload: { snapshot: null, recovered: false, settings: { pinned: true } } }));
+      return true;
+    });
+    await vi.waitFor(() => expect(regions.at(-1)).toEqual(expect.objectContaining({ x: 180, y: 52, width: 100, height: 26, controls: expect.any(Array) })));
+    bounds.mockReturnValue(new DOMRect(190, 52, 90, 26));
+    window.totNotes.receive({ type: 'focusEditor' });
+    await vi.waitFor(() => expect(regions.at(-1)).toEqual(expect.objectContaining({ x: 190, y: 52, width: 90, height: 26 })));
+  } finally { frame.mockRestore(); bounds.mockRestore(); }
+});
+
+test('顶部热区排除控件，打开面板时撤销，取消置顶后仍可拖动且正文不变', async () => {
+  const regions: unknown[] = [];
+  const editor = await openNote(null, message => {
+    if (message.type === 'windowDragRegion') regions.push(message.payload);
+    return false;
+  });
+  editor.commands.insertContent('拖动窗口不能修改文字');
+  const content = editor.getJSON();
+  const region = document.querySelector<HTMLElement>('#window-drag-region')!;
+  region.getBoundingClientRect = () => new DOMRect(180, 52, 100, 26);
+  document.querySelector<HTMLButtonElement>('#pin-button')!.click();
+  await vi.waitFor(() => expect(regions.at(-1)).toEqual(expect.objectContaining({ x: 180, y: 52, width: 100, height: 26, controls: expect.any(Array) })));
+  expect(region.hidden).toBe(false);
+  document.querySelector<HTMLButtonElement>('#notes-button')!.click();
+  await vi.waitFor(() => expect(regions.at(-1)).toBeNull());
+  document.querySelector<HTMLButtonElement>('#notes-button')!.click();
+  await vi.waitFor(() => expect(regions.at(-1)).not.toBeNull());
+  document.querySelector<HTMLButtonElement>('#pin-button')!.click();
+  await vi.waitFor(() => expect(regions.at(-1)).not.toBeNull());
+  expect(region.hidden).toBe(false); expect(editor.getJSON()).toEqual(content);
+});
+
+
+test('模式切换独立于置顶和正文，忙碌状态阻止重复点击且保留收起入口', async () => {
+  const requests: string[] = [];
+  const editor = await openNote(null, message => { requests.push(String(message.type)); return false; });
+  editor.commands.insertContent('模式切换保留正文'); const content = editor.getJSON();
+  const mode = document.querySelector<HTMLButtonElement>('#window-mode')!;
+  expect(mode.title).toContain('跟随菜单栏'); mode.click();
+  await vi.waitFor(() => expect(requests.filter(type => type === 'toggleWindowMode')).toHaveLength(1));
+  window.totNotes.receive({ type: 'windowMode', floating: true, busy: true });
+  expect(mode.disabled).toBe(true); mode.click();
+  expect(requests.filter(type => type === 'toggleWindowMode')).toHaveLength(1);
+  window.totNotes.receive({ type: 'windowMode', floating: true, busy: false });
+  expect(mode.title).toContain('自由移动'); expect(mode.disabled).toBe(false);
+  expect(document.querySelector('#pin-button')!.getAttribute('aria-pressed')).toBe('false');
+  document.querySelector<HTMLButtonElement>('#close')!.click();
+  await vi.waitFor(() => expect(requests).toContain('hide'));
+  expect(editor.getJSON()).toEqual(content);
+});

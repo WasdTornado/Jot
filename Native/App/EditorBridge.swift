@@ -25,6 +25,9 @@ import ServiceManagement
     var onCheckForUpdates: (() -> Void)?
     var onHide: (() async -> Void)?
     var onSettings: (() -> Void)?
+    var onDragRegion: ((CGRect?, [CGRect]) -> Void)?
+    var onWindowMode: (() -> Bool)?
+    var onToggleWindowMode: (() -> Void)?
     var onPreviewSkin: ((String?) -> Void)?
     var onPageNames: (([String: String]) -> Void)?
     private var pendingArchive: (token: String, archive: WorkspaceArchive)?
@@ -68,6 +71,11 @@ import ServiceManagement
     private func persistSettings() throws {
         try settings.validate()
         UserDefaults.standard.set(try JSONEncoder().encode(settings), forKey: preferenceKey)
+    }
+    func setPinned(_ pinned: Bool) {
+        settings.pinned = pinned
+        do { try persistSettings(); onSettings?(); send(["type": "nativeSettings", "settings": try json(settings)]) }
+        catch { NSLog("置顶状态保存失败：%@", error.localizedDescription) }
     }
     func rememberSize(_ size: NSSize) {
         settings.windowWidth = max(360, min(900, Int(size.width.rounded())))
@@ -196,7 +204,7 @@ import ServiceManagement
                     if let names = try await repository.storedPageNames() { settings.pageNames = names; try persistSettings() }
                     onPageNames?(settings.pageNames)
                     let loaded = try await repository.load(pageID: settings.pageID)
-                    reply("load", id: id, payload: ["snapshot": try loaded.map { try json($0.snapshot) } ?? NSNull(), "recovered": loaded?.recovered ?? false, "settings": try json(settings), "hotKeyError": hotKeyError ?? "", "appendShortcut": appendShortcut])
+                    reply("load", id: id, payload: ["snapshot": try loaded.map { try json($0.snapshot) } ?? NSNull(), "recovered": loaded?.recovered ?? false, "settings": try json(settings), "hotKeyError": hotKeyError ?? "", "appendShortcut": appendShortcut, "floating": onWindowMode?() ?? false])
                     onSettings?()
                 case "editorReady":
                     editorDidInitialize(); reply("editorReadyResult", id: id)
@@ -268,6 +276,27 @@ import ServiceManagement
                           let revision = payload["expectedRevision"] as? NSNumber else { throw NoteError.invalidDocument }
                     let restored = try await repository.restore(pageID: page, backupID: backupID, expectedRevision: revision.int64Value)
                     reply("restoreResult", id: id, payload: try json(restored))
+                case "toggleWindowMode":
+                    onToggleWindowMode?(); reply("windowModeResult", id: id)
+                case "windowDragRegion":
+                    if ProcessInfo.processInfo.environment["TOT_NOTES_TRACE_PLACEMENT"] == "1" {
+                        NSLog("拖动热区：%@，网页边界 %@", String(describing: body["payload"]), NSStringFromRect(webView.bounds))
+                    }
+                    if let payload = body["payload"] as? [String: Any], let x = payload["x"] as? Double, let y = payload["y"] as? Double,
+                       let width = payload["width"] as? Double, let height = payload["height"] as? Double,
+                       [x, y, width, height].allSatisfy(\.isFinite), x >= 0, y >= 0, y < 120, width >= 24, height >= 20,
+                       x + width <= webView.bounds.width + 1, y + height <= 120 {
+                        let controls = payload["controls"] as? [[String: Double]] ?? []
+                        guard controls.count <= 16 else { throw NoteError.invalidDocument }
+                        let excluded = try controls.map { control -> CGRect in
+                            guard let cx = control["x"], let cy = control["y"], let cw = control["width"], let ch = control["height"],
+                                  [cx, cy, cw, ch].allSatisfy(\.isFinite), cx >= 0, cy >= 0, cw >= 0, ch >= 0,
+                                  cx + cw <= webView.bounds.width + 1, cy + ch <= 120 else { throw NoteError.invalidDocument }
+                            return CGRect(x: cx, y: cy, width: cw, height: ch)
+                        }
+                        onDragRegion?(CGRect(x: x, y: y, width: width, height: height), excluded)
+                    } else { onDragRegion?(nil, []) }
+                    reply("windowDragRegionResult", id: id)
                 case "previewSkin":
                     guard let payload = body["payload"] as? [String: Any] else { throw NoteError.invalidDocument }
                     let skin = payload["skin"] as? String
@@ -293,7 +322,7 @@ import ServiceManagement
                     try onHotKey(key)
                     settings.hotKey = key; hotKeyError = nil; try persistSettings()
                     reply("hotKeyResult", id: id, payload: try json(settings))
-                    send(["type": "shortcutInfo", "appendShortcut": appendShortcut])
+                    send(["type": "shortcutInfo", "appendShortcut": appendShortcut, "floating": onWindowMode?() ?? false])
                 case "hide":
                     reply("hideResult", id: id); await onHide?()
                 case "quit":

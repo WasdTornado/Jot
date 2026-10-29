@@ -1,4 +1,4 @@
-import { cp, lstat, mkdir, rename } from 'node:fs/promises';
+import { lstat, mkdir, rename, rm, mkdtemp } from 'node:fs/promises';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import path from 'node:path';
@@ -37,8 +37,15 @@ if (existing) {
 await import('./build.mjs');
 await mkdir(path.dirname(installed), { recursive: true });
 // 从用户应用目录运行，避免 WKWebView 读取桌面工程资源时触发系统文件夹授权。
-await cp(path.join(root, 'dist/Jot.app'), installed, { recursive: true, force: true });
-execFileSync('codesign', ['--verify', '--deep', '--strict', installed], { stdio: 'inherit' });
+// 完整替换应用包，避免覆盖复制遗留框架文件破坏签名；用户数据位于独立目录。
+const staging = await mkdtemp(path.join(path.dirname(installed), '.jot-install-'));
+try {
+  const stagedApp = path.join(staging, 'Jot.app');
+  execFileSync('ditto', [path.join(root, 'dist/Jot.app'), stagedApp]);
+  execFileSync('codesign', ['--verify', '--deep', '--strict', stagedApp], { stdio: 'inherit' });
+  await rm(installed, { recursive: true, force: true });
+  await rename(stagedApp, installed);
+} finally { await rm(staging, { recursive: true, force: true }); }
 const env = { ...process.env };
 delete env.TOT_NOTES_DATA_DIR;
 const openArgs = [];

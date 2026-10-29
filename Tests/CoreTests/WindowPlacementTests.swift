@@ -7,6 +7,34 @@ final class WindowPlacementTests: XCTestCase {
     private let screen = CGRect(x: 0, y: 0, width: 1470, height: 956)
     private let visible = CGRect(x: 0, y: 0, width: 1470, height: 919)
 
+    func testFloatingPositionIsStableAndClampsEveryEdge() throws {
+        let placed = CGRect(x: 150, y: 170, width: 480, height: 478)
+        XCTAssertEqual(WindowPlacement.floating(frame: placed, screens: [visible]), placed)
+        for x in [-3000.0, 3000.0] {
+            for y in [-3000.0, 3000.0] {
+                let frame = try XCTUnwrap(WindowPlacement.floating(frame: CGRect(x: x, y: y, width: 480, height: 478), screens: [visible]))
+                XCTAssertTrue(visible.contains(frame))
+            }
+        }
+    }
+    func testFloatingDisplayRemovalAndNegativeOrigins() throws {
+        let other = CGRect(x: -1920, y: -1080, width: 1920, height: 1056)
+        let placed = CGRect(x: -900, y: -800, width: 480, height: 478)
+        XCTAssertEqual(WindowPlacement.floating(frame: placed, screens: [visible, other]), placed)
+        XCTAssertTrue(visible.contains(try XCTUnwrap(WindowPlacement.floating(frame: placed, screens: [visible]))))
+        XCTAssertNil(WindowPlacement.floating(frame: placed, screens: []))
+        XCTAssertNil(WindowPlacement.floating(frame: CGRect(x: Double.nan, y: 0, width: 480, height: 478), screens: [visible]))
+    }
+    func testFourCornersAndSmallScreenStayInsideSafeArea() throws {
+        for corner in ["topLeft", "topRight", "bottomLeft", "bottomRight"] {
+            let frame = try XCTUnwrap(WindowPlacement.corner(corner, screen: visible, size: size))
+            XCTAssertEqual(corner.hasSuffix("Right") ? frame.maxX : frame.minX, corner.hasSuffix("Right") ? visible.maxX - 8 : visible.minX + 8)
+            XCTAssertEqual(corner.hasPrefix("top") ? frame.maxY : frame.minY, corner.hasPrefix("top") ? visible.maxY - 8 : visible.minY + 8)
+        }
+        let small = CGRect(x: 0, y: 0, width: 400, height: 300)
+        XCTAssertTrue(small.contains(try XCTUnwrap(WindowPlacement.corner("bottomRight", screen: small, size: size))))
+    }
+
     func testTransientStartupAnchorMustNotProduceADesktopWindow() {
         // 真实冷启动捕获：按钮已有宽高，但屏幕坐标还没完成布局。
         for anchor in [nil, CGRect.zero, CGRect(x: 8, y: -13.5, width: 22, height: 27), CGRect(x: 500, y: 400, width: 22, height: 27)] {
