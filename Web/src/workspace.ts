@@ -19,7 +19,7 @@ export class NoteWorkspace {
   private readonly onScroll = (): void => {
     const session = this.active;
     if (!session || session.scrollTop === this.container.scrollTop) return;
-    session.scrollTop = this.container.scrollTop; session.revision++; session.coordinator.changed();
+    session.scrollTop = this.container.scrollTop; session.revision++; session.coordinator.changed(true);
   };
   constructor(private container: HTMLElement, private load: (id: string) => Promise<LoadedPage>,
     private persist: (snapshot: NoteSnapshot) => Promise<SaveReceipt>) { this.container.addEventListener('scroll', this.onScroll); }
@@ -91,7 +91,9 @@ export class NoteWorkspace {
       current.coordinator = new SaveCoordinator(snapshot, this.persist, (state, error) => {
         if (this.active === current) this.onStatus(state, error);
       });
-      editor.on('selectionUpdate', () => { if (this.active === current && !editor.view.composing) changed(); });
+      editor.on('selectionUpdate', () => {
+        if (this.active === current && !editor.view.composing) { current.revision++; current.coordinator.changed(true); }
+      });
       editor.view.dom.addEventListener('compositionstart', () => current.coordinator.compositionStarted());
       editor.view.dom.addEventListener('compositionend', () => current.coordinator.compositionEnded());
       return current;

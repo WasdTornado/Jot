@@ -79,3 +79,15 @@ test('拒绝不同页确认且释放后不发送写盘', async () => {
   coordinator.dispose(); revision++; coordinator.changed();
   await vi.advanceTimersByTimeAsync(2000); expect(writes).toBe(1);
 });
+test('浏览位置静默保存，正文修改仍提示进度，保存失败不能被滚动掩盖', async () => {
+  const statuses: string[] = []; const writes: number[] = []; let fail = false;
+  coordinator = new SaveCoordinator(snapshot, async s => { if(fail) throw Error('磁盘不可写'); writes.push(s.revision); return receipt(s.revision); }, s=>statuses.push(s));
+  revision++; coordinator.changed(true); await vi.advanceTimersByTimeAsync(300);
+  expect(writes).toEqual([1]); expect(statuses).not.toContain('dirty'); expect(statuses).not.toContain('saving');
+  revision++; coordinator.changed(); revision++; coordinator.changed(true);
+  await vi.advanceTimersByTimeAsync(300); expect(statuses).toContain('dirty');expect(statuses).toContain('saving');expect(coordinator.status).toBe('saved');
+  fail=true; revision++;coordinator.changed();await expect(coordinator.flush()).rejects.toThrow('磁盘不可写');
+  revision++;coordinator.changed(true);expect(coordinator.status).toBe('error');
+  await vi.advanceTimersByTimeAsync(300);expect(coordinator.status).toBe('error');
+  fail=false;await coordinator.flush();expect(coordinator.status).toBe('saved');
+});

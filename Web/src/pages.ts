@@ -1,3 +1,4 @@
+import { defaultShortcuts, type ShortcutAction } from './shortcuts';
 export const pages = [
   { id: 'page-2', name: '灵感', color: '#b58d29', dark: '#dfbd67', rgb: '181,141,41' },
   { id: 'page-3', name: '工作', color: '#bd7647', dark: '#e5a779', rgb: '189,118,71' },
@@ -9,7 +10,7 @@ export const pages = [
 ];
 export interface HotKeySettings { keyCode: number; modifiers: number; label: string }
 // fontSize 保留旧版存储档位 15 / 16 / 18；紧凑排版按档位映射为 13 / 14 / 16 pt。
-export interface AppSettings { pageNames: Record<string, string>; hideCompleted: boolean; pageID: string; theme: 'system' | 'light' | 'dark'; skin: 'default' | 'grid' | 'cream' | 'marker' | 'mint' | 'sakura' | 'manuscript' | 'sea'; fontFamily: 'auto' | 'system' | 'hand' | 'serif'; decorations: boolean; fontSize: 15 | 16 | 18; pinned: boolean; reduceTransparency: boolean; hotKey: HotKeySettings; windowWidth: number; windowHeight: number }
-export const defaultSettings: AppSettings = { pageNames: {}, hideCompleted: false, pageID: 'page-1', theme: 'system', skin: 'default', fontFamily: 'auto', decorations: true, fontSize: 16, pinned: false, reduceTransparency: false, hotKey: { keyCode: 49, modifiers: 6144, label: '⌃⌥空格' }, windowWidth: 480, windowHeight: 478 };
+export interface AppSettings { pageNames: Record<string, string>; hideCompleted: boolean; pageID: string; theme: 'system' | 'light' | 'dark'; skin: 'default' | 'grid' | 'cream' | 'marker' | 'mint' | 'sakura' | 'manuscript' | 'sea'; fontFamily: 'auto' | 'system' | 'hand' | 'serif'; decorations: boolean; fontSize: 15 | 16 | 18; pinned: boolean; reduceTransparency: boolean; hotKey: HotKeySettings; shortcuts: Record<ShortcutAction, HotKeySettings>; windowWidth: number; windowHeight: number }
+export const defaultSettings: AppSettings = { pageNames: {}, hideCompleted: false, pageID: 'page-1', theme: 'system', skin: 'default', fontFamily: 'auto', decorations: true, fontSize: 16, pinned: false, reduceTransparency: false, hotKey: { keyCode: 49, modifiers: 6144, label: '⌃⌥空格' }, shortcuts: defaultShortcuts, windowWidth: 480, windowHeight: 478 };
 
 export function pageName(settings: AppSettings, id: string): string { return settings.pageNames[id] || pages.find(page => page.id === id)?.name || id; }

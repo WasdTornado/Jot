@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Jot · 轻轻拉开，自在停留</title><link rel="stylesheet" href="window-motion.css"></head><body>
 <svg class="symbols" aria-hidden="true"><defs>
-<symbol id="docked" viewBox="0 0 24 24"><path d="M3 4h18M10 4v3l-2 3h8l-2-3V4M6 10h12a1 1 0 0 1 1 1v9H5v-9a1 1 0 0 1 1-1Z"/></symbol>
-<symbol id="floating" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M12 1v3m-2-1 2-2 2 2M12 20v3m-2-2 2 2 2-2M1 12h3m-1-2-2 2 2 2m17-2h3m-2-2 2 2-2 2"/></symbol>
-<symbol id="pin" viewBox="0 0 24 24"><path d="M8 3h8l-1 5 3 4v2H6v-2l3-4-1-5Zm4 11v7"/></symbol>
-<symbol id="search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></symbol>
-<symbol id="logo" viewBox="0 0 24 24"><path d="M7 3h11a2 2 0 0 1 2 2v16H7ZM4 6H2l2 14h3M11 9h5M11 13h5"/><circle cx="11" cy="6" r=".5"/></symbol>
+<symbol id="docked" viewBox="0 0 24 24"><path d="M3 4h18M12 4v4"/><rect x="6" y="8" width="12" height="12" rx="2"/><path d="M9 12h6"/></symbol>
+<symbol id="floating" viewBox="0 0 24 24"><path d="M12 2v4m-2-2 2-2 2 2M12 18v4m-2-2 2 2 2-2M2 12h4m-2-2-2 2 2 2m14-2h4m-2-2 2 2-2 2"/><rect x="8" y="8" width="8" height="8" rx="1.5"/></symbol>
+<symbol id="pin" viewBox="0 0 24 24"><path d="m8 3 8 0-1 5 3 4v2H6v-2l3-4-1-5Zm4 11v7"/></symbol>
+<symbol id="search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="7"/><path d="m15 15 5 5"/></symbol>
+<symbol id="logo" viewBox="0 0 24 24"><path d="M5.5 6 3.5 6.5 6 20.5 9 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path fill="currentColor" stroke="none" fill-rule="evenodd" d="M9.5 3h8a2.5 2.5 0 0 1 2.5 2.5v12a2.5 2.5 0 0 1-2.5 2.5h-8A2.5 2.5 0 0 1 7 17.5v-12A2.5 2.5 0 0 1 9.5 3ZM11.75 7a1.25 1.25 0 1 0-2.5 0 1.25 1.25 0 0 0 2.5 0Z"/></symbol>
 <symbol id="play" viewBox="0 0 24 24"><path d="m9 5 10 7-10 7Z"/></symbol>
 </defs></svg><main><section class="workbench" aria-label="拖动便签与菜单栏归位演示">
 <div class="desktop-wrap">
@@ -17,15 +17,15 @@
 <article class="note" id="note" aria-label="Jot 演示便签">
 <svg class="tear-layer" aria-hidden="true"><path id="tear"/></svg>
 <header class="note-header" id="drag-top" tabindex="0" aria-label="拖动便签；浮动时也可用方向键移动">
-<button id="close-note" class="icon" aria-label="关闭便签" title="收起便签 · Esc"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+<button disabled id="close-note" class="icon" aria-label="关闭便签" title="收起便签 · Esc"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
 <button id="mode" class="icon mode" aria-label="当前跟随菜单栏，点击切换自由拖拽" title="跟随菜单栏 · 点击自由拖拽"><svg><use href="#docked"/></svg><span class="tooltip">跟随菜单栏 · 点击自由拖拽</span></button>
-<nav class="dots" aria-label="七页便签"><button aria-label="灵感" style="--dot:#b99129"></button><button aria-label="工作" style="--dot:#bd7d51"></button><button aria-label="日常" style="--dot:#bf586e"></button><button aria-label="阅读" style="--dot:#a184b8"></button><button aria-label="草稿" style="--dot:#929097"></button><button class="selected" aria-label="随想" aria-current="page" style="--dot:#448c98"></button><button aria-label="生活" style="--dot:#7e9861"></button></nav>
-<button id="pin" class="icon" aria-label="置顶便签" aria-pressed="false" title="置顶仅控制窗口层级"><svg><use href="#pin"/></svg></button>
-<button id="find" class="icon" aria-label="查找示例文字" title="查找"><svg><use href="#search"/></svg></button>
+<nav class="dots" aria-label="七页便签"><button disabled aria-label="灵感" style="--dot:#b99129"></button><button disabled aria-label="工作" style="--dot:#bd7d51"></button><button disabled aria-label="日常" style="--dot:#bf586e"></button><button disabled aria-label="阅读" style="--dot:#a184b8"></button><button disabled aria-label="草稿" style="--dot:#929097"></button><button disabled class="selected" aria-label="随想" aria-current="page" style="--dot:#448c98"></button><button disabled aria-label="生活" style="--dot:#7e9861"></button></nav>
+<button disabled id="pin" class="icon" aria-label="置顶便签" aria-pressed="false" title="置顶仅控制窗口层级"><svg><use href="#pin"/></svg></button>
+<button disabled id="find" class="icon" aria-label="搜索（静态示意）" title="查找"><svg><use href="#search"/></svg></button>
 </header>
 <div class="page-label"><span id="page-number">06</span><i></i><span id="page-title">随想</span></div>
-<div class="writing" contenteditable="true" spellcheck="false" role="textbox" aria-label="示例便签，可输入但不会保存" aria-multiline="true"><p class="note-title">留一点空间，给突然的灵感。</p><p>想到什么，随手记下来。<br>也可以把这张便签，放在顺手的地方。</p><p class="todo"><span contenteditable="false">✓</span> 给今天留一个小小的空白</p><p class="todo"><span contenteditable="false"></span> 去窗边，看一会儿云</p><blockquote>不急着整理，先让想法落在这里。</blockquote></div>
-<footer><span><i></i> 演示便签 <b>· 不会保存</b></span><div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C6.8 3 3 6.8 3 11.6 3 17 7.1 21 12.1 21h1.1c1.8 0 2.5-1.8 1.5-3-.6-.7-.5-1.6.2-2.1.7-.5 1.6-.4 2.5-.4 2.5 0 3.6-1.6 3.6-4C21 6.8 16.8 3 12 3Z"/><circle cx="7.2" cy="10" r=".9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="6.9" r=".9" fill="currentColor" stroke="none"/><circle cx="15" cy="7.5" r=".9" fill="currentColor" stroke="none"/><circle cx="6.9" cy="14.2" r=".9" fill="currentColor" stroke="none"/></svg><span>Aa</span><button id="more" class="icon" aria-label="收起示例便签" title="收起便签 · Esc">···</button></div></footer>
+<div class="writing" aria-label="窗口动效示意正文"><p class="note-title">留一点空间，给突然的灵感。</p><p>想到什么，随手记下来。<br>也可以把这张便签，放在顺手的地方。</p><p class="todo"><span contenteditable="false">✓</span> 给今天留一个小小的空白</p><p class="todo"><span contenteditable="false"></span> 去窗边，看一会儿云</p><blockquote>不急着整理，先让想法落在这里。</blockquote></div>
+<footer><span><i></i> 动效示意 <b>· 正文在上方试写</b></span><!-- APP_FOOTER_START --><div><button disabled id="motion-skins" class="icon" aria-label="主题（静态示意）"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C6.8 3 3 6.8 3 11.6 3 17 7.1 21 12.1 21h1.1c1.8 0 2.5-1.8 1.5-3-.6-.7-.5-1.6.2-2.1.7-.5 1.6-.4 2.5-.4 2.5 0 3.6-1.6 3.6-4C21 6.8 16.8 3 12 3Z"/><circle cx="7.2" cy="10" r=".9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="6.9" r=".9" fill="currentColor" stroke="none"/><circle cx="15" cy="7.5" r=".9" fill="currentColor" stroke="none"/><circle cx="6.9" cy="14.2" r=".9" fill="currentColor" stroke="none"/></svg></button><button disabled id="motion-format" class="icon" aria-label="格式（静态示意）">Aa</button><button disabled id="motion-help" class="icon" aria-label="快捷键（静态示意）"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h.1M11 9h.1M15 9h.1M7 12h.1M11 12h.1M15 12h.1M7 15h10"/></svg></button><button disabled id="more" class="icon" aria-label="更多（静态示意）" title="便签操作">···</button></div><!-- APP_FOOTER_END --></footer>
 </article>
 <div id="gesture-hint">在便签顶部的空白处向下拖动 <span>↓</span></div>
 </div>
@@ -37,6 +37,6 @@
 <button class="scene" data-scene="return"><span class="scene-no">03</span><span><strong>吸回菜单栏</strong><small>用完轻轻一收，随时再打开</small></span><svg><use href="#play"/></svg></button>
 <div class="playback"><label><input id="slow" type="checkbox">慢放 × 0.4</label><label><input id="dark" type="checkbox">深色外观</label><label><input id="reduced" type="checkbox">减少动态效果</label></div>
 <div class="mode-key"><p>两种模式，一张便签</p><div><svg><use href="#docked"/></svg><span><b>跟随菜单栏</b><small>小窗连着上方横线</small></span></div><div><svg><use href="#floating"/></svg><span><b>自由拖拽</b><small>四向箭头表达移动</small></span></div></div>
-<p class="tiny">图标显示当前模式，悬停提示下一步操作。<br>右侧图钉只负责置顶，不与模式开关重复。</p>
+<p class="tiny">图标显示当前模式，悬停提示下一步操作。<br>其余图标仅为界面示意，不响应点击。</p>
 </aside></section>
 </main><script type="module" src="window-motion.js"></script></body></html>

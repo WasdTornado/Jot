@@ -5,5 +5,5 @@
     "lib": ["ES2022", "DOM"], "noEmit": true, "types": ["vitest/globals"],
     "paths": { "@tiptap/*": ["./node_modules/@tiptap/*"] }
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts"]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "../Website/demo.ts"]
 }

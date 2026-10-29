@@ -23,10 +23,11 @@ struct AppSettings: Codable, Equatable {
     var pinned = false
     var reduceTransparency = false
     var hotKey = HotKeySettings()
+    var shortcuts = AppShortcuts.defaults
     var windowWidth = 480
     var windowHeight = 478
     init() { }
-    enum CodingKeys: String, CodingKey { case pageNames, hideCompleted, pageID, theme, skin, fontFamily, decorations, fontSize, pinned, reduceTransparency, hotKey, windowWidth, windowHeight }
+    enum CodingKeys: String, CodingKey { case pageNames, hideCompleted, pageID, theme, skin, fontFamily, decorations, fontSize, pinned, reduceTransparency, hotKey, shortcuts, windowWidth, windowHeight }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         pageNames = try values.decodeIfPresent([String: String].self, forKey: .pageNames) ?? [:]
@@ -40,6 +41,7 @@ struct AppSettings: Codable, Equatable {
         pinned = try values.decodeIfPresent(Bool.self, forKey: .pinned) ?? pinned
         reduceTransparency = try values.decodeIfPresent(Bool.self, forKey: .reduceTransparency) ?? reduceTransparency
         hotKey = try values.decodeIfPresent(HotKeySettings.self, forKey: .hotKey) ?? hotKey
+        shortcuts = try values.decodeIfPresent([String: HotKeySettings].self, forKey: .shortcuts) ?? shortcuts
         windowWidth = try values.decodeIfPresent(Int.self, forKey: .windowWidth) ?? windowWidth
         windowHeight = try values.decodeIfPresent(Int.self, forKey: .windowHeight) ?? windowHeight
     }
@@ -51,6 +53,7 @@ struct AppSettings: Codable, Equatable {
               (360...900).contains(windowWidth), (360...1000).contains(windowHeight) else { throw NoteError.invalidDocument }
         guard pageNames.allSatisfy({ (1...7).map { "page-\($0)" }.contains($0.key) && !$0.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && $0.value.count <= 20 && $0.value.rangeOfCharacter(from: .controlCharacters) == nil }) else { throw NoteError.invalidDocument }
         try hotKey.validate()
+        try AppShortcuts.validate(shortcuts, global: hotKey)
     }
 }
 

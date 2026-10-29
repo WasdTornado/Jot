@@ -19,6 +19,7 @@ import Carbon
         guard result == noErr, let reference else { throw CocoaError(.featureUnsupported) }
         return reference
     }, unregister: { UnregisterEventHotKey($0) })
+    private var shortcutMenuItems: [String: NSMenuItem] = [:]
     private var pageMenuItems: [NSMenuItem] = []
     private var eventHandler: EventHandlerRef?
     private var updater: AppUpdater!
@@ -32,6 +33,8 @@ import Carbon
         })
         controller.bridge.onCheckForUpdates = { [weak self] in self?.updater.checkForUpdates(nil) }
         buildMenu()
+        controller.bridge.onShortcuts = { [weak self] keys in self?.applyShortcuts(keys) }
+        applyShortcuts(controller.bridge.settings.shortcuts)
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem.button {
             button.image = StatusIcon.make()
@@ -103,6 +106,8 @@ import Carbon
         else { showNote() }
     }
     @objc func appendNote() { showNote(); controller.bridge.requestAppend() }
+    @objc func previousNote() { controller.bridge.send(["type": "requestPageStep", "step": -1]) }
+    @objc func nextNote() { controller.bridge.send(["type": "requestPageStep", "step": 1]) }
     @objc func findNote() { controller.bridge.send(["type": "requestSearch"]) }
     @objc func selectAllNoteText() {
         let webView = controller.bridge.webView
@@ -139,6 +144,17 @@ import Carbon
         do { try controller.bridge.onHotKey?(controller.bridge.settings.hotKey) }
         catch { controller.bridge.hotKeyError = error.localizedDescription }
     }
+    private func applyShortcuts(_ keys: [String: HotKeySettings]) {
+        for (action, key) in keys {
+            guard let item = shortcutMenuItems[action] else { continue }
+            item.keyEquivalent = AppShortcuts.letters[key.keyCode] ?? (key.keyCode == 123 ? "\u{f702}" : "\u{f703}")
+            var mask: NSEvent.ModifierFlags = []
+            for (bit, flag) in [(UInt32(256), NSEvent.ModifierFlags.command), (512, .shift), (2048, .option), (4096, .control)] {
+                if key.modifiers & bit != 0 { mask.insert(flag) }
+            }
+            item.keyEquivalentModifierMask = mask
+        }
+    }
     private func buildMenu() {
         let menu = NSMenu()
         let app = NSMenu(); let root = NSMenuItem(); root.submenu = app; menu.addItem(root)
@@ -160,6 +176,11 @@ import Carbon
         let selectAll = NSMenuItem(title: "全选", action: #selector(selectAllNoteText), keyEquivalent: "a"); selectAll.target = self; edit.addItem(selectAll)
         let redo = NSMenuItem(title: "重做", action: NSSelectorFromString("redo:"), keyEquivalent: "z"); redo.keyEquivalentModifierMask = [.command, .shift]; edit.insertItem(redo, at: 1)
         let find = NSMenuItem(title: "查找便签", action: #selector(findNote), keyEquivalent: "f"); find.target = self; edit.addItem(find)
+        shortcutMenuItems["search"] = find; shortcutMenuItems["export"] = export
+        for (id, title, action) in [("previous", "上一页", #selector(previousNote)), ("next", "下一页", #selector(nextNote))] {
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: ""); item.target = self
+            file.addItem(item); shortcutMenuItems[id] = item
+        }
         NSApp.mainMenu = menu
     }
 }

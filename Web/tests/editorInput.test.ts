@@ -30,3 +30,27 @@ test('首行为待办时可勾选、全篇删除并撤销恢复所有格式',()=
  editor.commands.deleteSelection();expect(editor.getJSON()).toEqual({type:'doc',content:[{type:'paragraph'}]});
  editor.commands.undo();expect(editor.getJSON()).toEqual(before);
 });
+test('块状全选不写入正文，移动光标后恢复普通选区，替换和撤销保留内容',()=>{
+ setup();editor.commands.setContent('<p>普通正文</p><ul data-type="taskList"><li data-type="taskItem"><p>待办</p></li></ul><blockquote><p>引用</p></blockquote>');
+ const before=editor.getJSON();editor.view.dom.focus();selectAllNoteText(editor);
+ expect(editor.view.dom.classList.contains('note-all-selected')).toBe(true);
+ expect(editor.getJSON()).toEqual(before);
+ editor.commands.setTextSelection({from:1,to:3});
+ expect(editor.view.dom.classList.contains('note-all-selected')).toBe(false);
+ selectAllNoteText(editor);editor.commands.insertContent('新内容');
+ expect(editor.getText()).toBe('新内容');
+ expect(editor.view.dom.classList.contains('note-all-selected')).toBe(false);
+ editor.commands.undo();expect(editor.getJSON()).toEqual(before);
+});
+test('鼠标式跨块选区只铺满完整内容块，首尾部分文字与反向选择保持准确',()=>{
+ setup();editor.commands.setContent('<p>首行正文</p><ul data-type="taskList"><li data-type="taskItem"><p>任务一</p></li><li data-type="taskItem"><p>任务二</p></li></ul><p>末行正文</p>');
+ const before=editor.getJSON();
+ const texts: number[]=[];editor.state.doc.descendants((node,pos)=>{if(node.isText)texts.push(pos);});
+ for(const range of [{from:texts[0]+2,to:texts[3]+2},{from:texts[3]+2,to:texts[0]+2}]) {
+   editor.commands.setTextSelection(range);
+   expect([...editor.view.dom.querySelectorAll('.note-selected-block')].map(n=>n.querySelector('p')?.textContent)).toEqual(['任务一','任务二']);
+   expect(editor.state.doc.textBetween(editor.state.selection.from,editor.state.selection.to,'|')).toBe('正文|任务一|任务二|末行');
+   expect(editor.getJSON()).toEqual(before);
+ }
+ editor.commands.setTextSelection(texts[0]);expect(editor.view.dom.querySelector('.note-selected-block')).toBeNull();
+});

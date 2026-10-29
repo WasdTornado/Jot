@@ -41,7 +41,7 @@ await mkdir(path.dirname(installed), { recursive: true });
 const staging = await mkdtemp(path.join(path.dirname(installed), '.jot-install-'));
 try {
   const stagedApp = path.join(staging, 'Jot.app');
-  execFileSync('ditto', [path.join(root, 'dist/Jot.app'), stagedApp]);
+  execFileSync('ditto', [path.join(root, 'dist/Build.noindex/Jot.app'), stagedApp]);
   execFileSync('codesign', ['--verify', '--deep', '--strict', stagedApp], { stdio: 'inherit' });
   await rm(installed, { recursive: true, force: true });
   await rename(stagedApp, installed);

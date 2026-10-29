@@ -5,6 +5,7 @@ export class SaveCoordinator {
   status: SaveStatus = 'saved';
   error: string | undefined;
   private savedRevision: number;
+  private contentRevision: number;
   private composing = false;
   private disposed = false;
   private idle?: ReturnType<typeof setTimeout>;
@@ -15,7 +16,7 @@ export class SaveCoordinator {
   constructor(private snapshot: () => NoteSnapshot,
     private persist: (snapshot: NoteSnapshot) => Promise<SaveReceipt>,
     private onStatus: (status: SaveStatus, error?: string) => void = () => {}) {
-    this.savedRevision = snapshot().revision;
+    this.contentRevision = this.savedRevision = snapshot().revision;
   }
   private state(status: SaveStatus, error?: string): void {
     this.status = status; this.error = error; this.onStatus(status, error);
@@ -23,9 +24,10 @@ export class SaveCoordinator {
   private clearTimers(): void {
     clearTimeout(this.idle); clearTimeout(this.maximum); this.idle = this.maximum = undefined;
   }
-  changed(): void {
+  changed(silent = false): void {
     if (this.disposed) return;
-    this.state('dirty');
+    // 滚动和光标仍持久化，但只有正文修改才进入可见的保存进度。
+    if (!silent) { this.contentRevision = this.snapshot().revision; this.state('dirty'); }
     if (this.composing) return;
     clearTimeout(this.idle);
     const save = (): void => { this.clearTimers(); void this.saveLatest().catch(() => {}); };
@@ -49,12 +51,12 @@ export class SaveCoordinator {
     if (next.revision <= this.savedRevision) { this.state('saved'); return Promise.resolve(); }
     const existing = this.pending.get(next.revision);
     if (existing) return existing;
-    this.state('saving');
+    if (this.contentRevision > this.savedRevision) this.state('saving');
     const promise = this.persist(next).then(receipt => {
       if (receipt.pageID !== next.pageID || receipt.revision < next.revision) throw Error('保存确认与便签不一致');
       this.savedRevision = Math.max(this.savedRevision, receipt.revision);
       if (!this.disposed && (this.snapshot().revision <= this.savedRevision || this.status !== 'error')) {
-        this.state(this.snapshot().revision <= this.savedRevision ? 'saved' : 'dirty');
+        this.state(this.contentRevision <= this.savedRevision ? 'saved' : 'dirty');
       }
     }).catch((error: unknown) => {
       if (!this.disposed && next.revision > this.savedRevision && next.revision >= this.snapshot().revision) {

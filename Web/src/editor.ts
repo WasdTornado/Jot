@@ -1,4 +1,4 @@
-import { InlineCodeExit, selectAllNoteText } from './editorInput';
+import { BlockSelectionAppearance, InlineCodeExit, selectAllNoteText } from './editorInput';
 import { setupSlashMenu } from './slashMenu';
 import { insertPlainParagraphAfterBlock } from './dailyEditing';
 import { Editor, Extension, InputRule } from '@tiptap/core';
@@ -36,7 +36,7 @@ const NoteTaskItem = TaskItem.extend({
 
 export function noteExtensions() {
   return [StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: { openOnClick: false }, trailingNode: false }),
-    InlineCodeExit, CompletedFold, TaskList, NoteTaskItem.configure({ nested: true, HTMLAttributes: { 'data-type': 'taskItem' },
+    InlineCodeExit, BlockSelectionAppearance, CompletedFold, TaskList, NoteTaskItem.configure({ nested: true, HTMLAttributes: { 'data-type': 'taskItem' },
       a11y: { checkboxLabel: (node, checked) => `${checked ? '已完成' : '未完成'}待办：${node.textContent || '空白'}` } })];
 }
 

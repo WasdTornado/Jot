@@ -2,6 +2,33 @@ import AppKit
 import WebKit
 
 @MainActor func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap { descendants($0) } }
+@MainActor func checkSkinGlass() {
+    let surface = GlassSurface(frame: NSRect(x: 0, y: 0, width: 480, height: 478))
+    for skin in ["default", "grid", "cream", "marker", "mint", "sakura", "manuscript", "sea"] {
+        for dark in [false, true] {
+            surface.setSolid(false, dark: dark, skin: skin)
+            guard !surface.material.isHidden,
+                  let tintAlpha = surface.subviews.last?.layer?.backgroundColor?.alpha, tintAlpha < 0.5,
+                  surface.layer?.backgroundColor?.alpha == 0 else {
+                print("FAIL：\(skin) 深色=\(dark) 的毛玻璃被不透明层遮住"); exit(1)
+            }
+            surface.setSolid(true, dark: dark, skin: skin)
+            guard surface.material.isHidden, surface.layer?.backgroundColor?.alpha == 1 else {
+                print("FAIL：减少透明效果没有恢复实色纸张"); exit(1)
+            }
+        }
+    }
+    var colors = Set<String>()
+    let copy = GlassSurface(frame: surface.frame)
+    for page in 1...7 {
+        surface.setSolid(false, dark: false, pageID: "page-\(page)")
+        colors.insert(surface.paperColor.description)
+        copy.copyAppearance(from: surface)
+        assert(copy.paperColor == surface.paperColor, "拖拽覆盖层必须继承当前页的颜色")
+    }
+    assert(colors.count == 7, "默认皮肤七页必须具有不同的纸张染色")
+    print("PASS：八种皮肤深浅模式均启用玻璃，减少透明效果恢复实色")
+}
 @MainActor func checkPointerSeam() {
     let surface = GlassSurface(frame: NSRect(x: 0, y: 0, width: 480, height: 478))
     for x in [80, 240, 400] {
@@ -24,14 +51,21 @@ import WebKit
           panels.allSatisfy({ panel in NSScreen.screens.contains { $0.frame == panel.frame } }) else {
         print("FAIL：动效图层没有逐屏覆盖，会被独立 Space 裁剪"); exit(1)
     }
+    let paper = GlassSurface(frame: NSRect(x: 0, y: 0, width: 480, height: 478))
+    paper.setSolid(false, dark: true, skin: "sea")
+    overlay.triangle(tip: CGPoint(x: 400, y: 900), base: CGPoint(x: 410, y: 800), halfWidth: 14, surface: paper)
+    guard panels.allSatisfy({ panel in
+        descendants(panel.contentView!).contains { $0 is NSVisualEffectView }
+    }) else { print("FAIL：拖拽连接使用实色填充，没有继承纸张毛玻璃"); exit(1) }
     let bitmap = CGContext(data: nil, width: 480, height: 468, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
     bitmap.setFillColor(NSColor.red.cgColor); bitmap.fill(CGRect(x: 0, y: 0, width: 480, height: 468))
-    overlay.prepare(image: bitmap.makeImage()!, size: CGSize(width: 480, height: 468))
+    overlay.prepare(image: bitmap.makeImage()!, size: CGSize(width: 480, height: 468), surface: paper)
     let origin = CGRect(x: 200, y: 100, width: 480, height: 468)
     overlay.genie(progress: 0, origin: origin, target: CGPoint(x: 400, y: 900))
     for panel in panels {
         guard let view = panel.contentView, view.isFlipped, let root = view.layer,
-              root.bounds.size == panel.frame.size, let first = root.sublayers?.dropFirst().first,
+              root.bounds.size == panel.frame.size, let first = root.sublayers?.first(where: { $0.name == "JotPaperStrip" }),
+              first.zPosition > (view.subviews.first?.layer?.zPosition ?? 0),
               abs(first.frame.minX - (origin.minX - panel.frame.minX)) < 0.01,
               abs(first.frame.minY - (panel.frame.maxY - origin.maxY)) < 0.01 else {
             print("FAIL：真实 AppKit 图层与便签坐标不一致"); exit(1)
@@ -69,6 +103,7 @@ import WebKit
 }
 MainActor.assumeIsolated {
     NSApplication.shared.setActivationPolicy(.prohibited)
+    checkSkinGlass()
     checkPointerSeam()
     checkMotionOverlays()
     let controller = WindowController()

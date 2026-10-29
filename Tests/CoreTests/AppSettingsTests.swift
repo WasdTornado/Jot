@@ -2,6 +2,29 @@ import XCTest
 @testable import TotNotesCore
 
 final class AppSettingsTests: XCTestCase {
+    func testCustomShortcutsPersistAndRejectConflicts() throws {
+        var settings = AppSettings()
+        settings.shortcuts["search"] = .init(keyCode: 5, modifiers: 768, label: "⇧⌘G")
+        try settings.validate()
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(decoded.shortcuts, settings.shortcuts)
+        settings.shortcuts["export"] = settings.shortcuts["search"]
+        XCTAssertThrowsError(try settings.validate())
+        settings.shortcuts["export"] = AppShortcuts.defaults["export"]
+        settings.hotKey = settings.shortcuts["search"]!
+        XCTAssertThrowsError(try settings.validate())
+        settings.hotKey = .init(keyCode: 5, modifiers: 256, label: "⌘G")
+        XCTAssertThrowsError(try settings.validate())
+        settings.hotKey = HotKeySettings()
+        for key in [HotKeySettings(keyCode: 0, modifiers: 256, label: "⌘A"), .init(keyCode: 11, modifiers: 768, label: "⇧⌘B"), .init(keyCode: 8, modifiers: 2304, label: "⌥⌘C")] {
+            settings.shortcuts["search"] = key
+            XCTAssertThrowsError(try settings.validate())
+        }
+        XCTAssertThrowsError(try AppShortcuts.validateGlobal(.init(keyCode: 0, modifiers: 256, label: "⌘A")))
+        try AppShortcuts.validateGlobal(HotKeySettings())
+        let old = try JSONDecoder().decode(AppSettings.self, from: Data("{}".utf8))
+        XCTAssertEqual(old.shortcuts, AppShortcuts.defaults)
+    }
     func testSettingsRoundTripAndDefaultKeepLegacyPage() throws {
         var settings = AppSettings()
         XCTAssertEqual(settings.pageID, "page-1")

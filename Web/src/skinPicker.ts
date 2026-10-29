@@ -16,11 +16,7 @@ export const skins: { id: Skin; name: string; font: 'system' | 'hand' | 'serif' 
 export function setupSkinPicker(preview: (skin?: Skin) => void, choose: (skin: Skin) => void): void {
   const picker = document.querySelector<HTMLElement>('#skins')!;
   const list = picker.querySelector<HTMLElement>('.skin-fan')!;
-  const settings = document.querySelector<HTMLElement>('.skin-options')!;
   for (const [index, skin] of skins.entries()) {
-    const option = document.createElement('button'); option.type = 'button'; option.dataset.skin = skin.id;
-    option.innerHTML = `<i class="skin-swatch swatch-${skin.id}" aria-hidden="true"></i><span>${skin.name}</span>`;
-    settings.append(option);
     const card = document.createElement('button'); card.type = 'button'; card.className = 'skin-card'; card.dataset.previewSkin = skin.id;
     card.setAttribute('aria-pressed', 'false'); card.style.setProperty('--fan-index', String(index));
     card.innerHTML = `<span>${skin.name}</span><span class="skin-check" aria-hidden="true">✓</span><i class="skin-swatch swatch-${skin.id}" aria-hidden="true"></i>`;

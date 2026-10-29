@@ -1,3 +1,4 @@
+import { defaultShortcuts, matchesShortcut, shortcutActions, type ShortcutAction } from './shortcuts';
 import { setupSkinPicker, skins, type Skin } from './skinPicker';
 import { selectAllNoteText } from './editorInput';
 import { setupPageDock } from './pageDock';
@@ -91,8 +92,6 @@ function renderAppearance(): void {
   const family = settings.fontFamily === 'auto' ? (skins.find(item => item.id === skin)?.font ?? 'system') : settings.fontFamily;
   document.body.style.setProperty('--note-font-family', family === 'hand' ? '"Jot WenKai", var(--font-ui)' : family === 'serif' ? '"Songti SC", "STSong", serif' : 'var(--font-ui)');
   document.querySelector<HTMLSelectElement>('#font-family')!.value = settings.fontFamily;
-  document.querySelector<HTMLInputElement>('#decorations-toggle')!.checked = settings.decorations;
-  document.querySelectorAll<HTMLButtonElement>('button[data-skin]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.skin === settings.skin)));
   document.querySelectorAll<HTMLButtonElement>('[data-preview-skin]').forEach(button => {
     button.setAttribute('aria-pressed', String(button.dataset.previewSkin === settings.skin));
     button.classList.toggle('is-preview', button.dataset.previewSkin === previewSkin);
@@ -121,7 +120,7 @@ function renderAppearance(): void {
     button.querySelector('.tip-copy')!.textContent = title;
     button.setAttribute('aria-label', `第 ${index + 1} 页 · ${pageName(settings, pages[index].id)} · ${title}`);
   });
-  document.querySelector('#hotkey-label')!.textContent = settings.hotKey.label;
+  renderShortcuts();
   document.body.classList.toggle('pinned', settings.pinned);
   scheduleDragRegion();
   pin.setAttribute('aria-pressed', String(settings.pinned));
@@ -229,8 +228,7 @@ document.querySelector('#skins-button')!.addEventListener('keydown', event => {
   key.preventDefault(); if (surfaces.current !== 'skins') togglePanel('skins');
   document.querySelector<HTMLButtonElement>('#skins [aria-pressed=true]')?.focus({ preventScroll:true });
 });
-document.querySelector('#backup-button')!.addEventListener('click', () => togglePanel('backup-panel'));
-document.querySelector('#help-button')!.addEventListener('click', () => { if (!busy()) surfaces.show('help-panel','settings'); });
+document.querySelector('#help-button')!.addEventListener('click', () => togglePanel('help-panel'));
 document.querySelectorAll('[data-back]').forEach(button => button.addEventListener('click', () => { if (!busy()) surfaces.back(); }));
 for (const format of formats) {
   const button = document.createElement('button'); button.type = 'button'; button.className = 'menu-action';
@@ -259,7 +257,7 @@ for (const id of ['paragraph','heading1','task','bulletList','orderedList','bloc
 }
 document.addEventListener('pointerdown', event => {
   if (busy()) return;
-  if (!(event.target as Element).closest('.popover,.content-pane,#rename-page,#completed-summary,#format-button,#notes-button,#skins-button') && !document.querySelector<HTMLElement>('.content-pane:not([hidden])')) closePanels();
+  if (!(event.target as Element).closest('.popover,.content-pane,#rename-page,#completed-summary,#format-button,#notes-button,#skins-button,#help-button') && !document.querySelector<HTMLElement>('.content-pane:not([hidden])')) closePanels();
 });
 document.querySelectorAll<HTMLButtonElement>('[data-theme]').forEach(button => button.addEventListener('click', () => { if (!busy()) saveSettings({ theme: button.dataset.theme as AppSettings['theme'] }); }));
 document.querySelectorAll<HTMLButtonElement>('[data-font]').forEach(button => button.addEventListener('click', () => { if (!busy()) saveSettings({ fontSize: Number(button.dataset.font) as AppSettings['fontSize'] }); }));
@@ -276,19 +274,9 @@ setupSkinPicker(previewAppearance, skin => {
 });
 surfaces.onClose = id => { if (id === 'skins') previewAppearance(); };
 window.addEventListener('blur', () => { if (surfaces.current === 'skins') surfaces.close(false); });
-document.querySelectorAll<HTMLButtonElement>('button[data-skin]').forEach(button => button.addEventListener('click', () => {
-  if (!busy()) saveSettings({ skin: button.dataset.skin as AppSettings['skin'] });
-}));
 document.querySelector('#font-family')!.addEventListener('change', event => {
   if (busy()) { renderAppearance(); return; }
   saveSettings({ fontFamily: (event.target as HTMLSelectElement).value as AppSettings['fontFamily'] });
-});
-document.querySelector('#decorations-toggle')!.addEventListener('change', event => {
-  if (busy()) { renderAppearance(); return; }
-  saveSettings({ decorations: (event.target as HTMLInputElement).checked });
-});
-document.querySelector('#reset-appearance')!.addEventListener('click', () => {
-  if (!busy()) saveSettings({ skin: 'default', fontFamily: 'auto', decorations: true });
 });
 document.querySelector('#solid-toggle')!.addEventListener('change', event => {
   const input = event.target as HTMLInputElement;
@@ -343,26 +331,55 @@ async function exportNote(all = false): Promise<void> {
   }
 }
 document.querySelector('#export-all')!.addEventListener('click', () => { void exportNote(true).catch(showError); });
-document.querySelector<HTMLButtonElement>('#hotkey-button')!.addEventListener('click', event => {
-  const button = event.currentTarget as HTMLButtonElement;
-  const message = document.querySelector('#hotkey-message')!;
+const editableShortcuts = document.querySelector('#editable-shortcuts')!;
+for (const action of [{ id: 'global', label: '打开 / 收起便签' }, ...shortcutActions]) {
+  const row = document.createElement('div'); row.className = 'shortcut-row';
+  const label = document.createElement('span'); label.textContent = action.label;
+  if (action.id === 'global') { const badge = document.createElement('small'); badge.textContent = '全局'; label.append(badge); }
+  const button = document.createElement('button'); button.type = 'button'; button.className = 'shortcut-key'; button.dataset.shortcut = action.id;
+  button.setAttribute('aria-label', `修改${action.label}快捷键`);
+  const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'shortcut-reset'; reset.textContent = '↺'; reset.dataset.resetShortcut = action.id;
+  reset.title = `恢复${action.label}默认快捷键`; reset.setAttribute('aria-label', reset.title);
+  button.addEventListener('click', () => { void changeShortcut(action.id, button); });
+  reset.addEventListener('click', () => { void changeShortcut(action.id, button, true); });
+  row.append(label, button, reset); editableShortcuts.append(row);
+}
+function renderShortcuts(): void {
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-shortcut]')) {
+    const id = button.dataset.shortcut!;
+    const key = id === 'global' ? settings.hotKey : settings.shortcuts[id as ShortcutAction];
+    const original = id === 'global' ? defaultSettings.hotKey : defaultShortcuts[id as ShortcutAction];
+    if (!button.classList.contains('is-recording')) button.textContent = key.label;
+    button.disabled = hotKeyRecording;
+    document.querySelector<HTMLButtonElement>(`[data-reset-shortcut="${id}"]`)!.disabled = hotKeyRecording || (key.keyCode === original.keyCode && key.modifiers === original.modifiers);
+  }
+  document.querySelector<HTMLElement>('#search-button')!.title = `查找便签 · ${settings.shortcuts.search.label}`;
+  document.querySelector('#export span')!.textContent = settings.shortcuts.export.label;
+}
+async function changeShortcut(action: string, button: HTMLButtonElement, reset = false): Promise<void> {
   if (busy() || !workspace.active) return;
+  const message = document.querySelector<HTMLElement>('#shortcut-message')!;
+  const feedback = (text: string, error = false): void => { message.textContent = text; message.dataset.error = String(error); };
   const session = workspace.active;
-  if (session.editor.view.composing) { message.textContent = '请先完成中文选词，再录制快捷键'; return; }
+  if (session.editor.view.composing) { feedback('请先完成中文选词，再录制快捷键'); return; }
   hotKeyRecording = true; session.editor.setEditable(false, false);
-  button.disabled = true; message.textContent = '正在准备录制…';
-  void (async () => {
-    await workspace.flush();
-    const key = await bridge.request<HotKeySettings | null>('recordHotKey', undefined, null);
-    if (!key) { message.textContent = '已取消，原快捷键保持不变'; return; }
-    const saved = await bridge.request<AppSettings>('setHotKey', key);
-    settings.hotKey = saved.hotKey; renderAppearance(); message.textContent = '快捷键已生效';
-  })().catch(error => { message.textContent = error instanceof Error ? error.message : '快捷键设置失败，原快捷键保持不变'; })
-    .finally(() => {
-      hotKeyRecording = false; button.disabled = false;
-      if (!session.editor.isDestroyed) session.editor.setEditable(true, false);
-    });
-});
+  if (!reset && button.dataset.shortcut) { button.classList.add('is-recording'); button.textContent = '请按组合键…'; }
+  button.disabled = true; renderShortcuts(); feedback(reset ? '正在恢复默认…' : '按下新组合键，Esc 取消');
+  try {
+    await workspace.flush(); await preferenceQueue;
+    const key = reset ? (action === 'global' ? defaultSettings.hotKey : defaultShortcuts[action as ShortcutAction]) : await bridge.request<HotKeySettings | null>('recordHotKey', undefined, null);
+    if (!key) { feedback('已取消，原快捷键保持不变'); return; }
+    const saved = await bridge.request<AppSettings>(action === 'global' ? 'setHotKey' : 'setShortcut', action === 'global' ? key : { action, key, reset });
+    if (action === 'global') settings.hotKey = saved.hotKey;
+    else settings.shortcuts = saved.shortcuts;
+    feedback(reset ? '已恢复默认快捷键' : '快捷键已生效');
+  } catch (error) { feedback(error instanceof Error ? error.message : '未能保存，原快捷键保持不变', true); }
+  finally {
+    hotKeyRecording = false; button.classList.remove('is-recording'); button.disabled = false;
+    if (!session.editor.isDestroyed) session.editor.setEditable(true, false);
+    renderAppearance();
+  }
+}
 async function saveNow(): Promise<void> {
   if (busy()) return;
   try { await workspace.flush(); await preferenceQueue; renderSaveStatus(); }
@@ -384,18 +401,24 @@ retry.addEventListener('click', () => {
 document.querySelector('#close')!.addEventListener('click', () => { void bridge.request('hide').catch(showError); });
 document.querySelector('#check-updates')!.addEventListener('click', () => { void bridge.request('checkForUpdates').catch(showError); });
 document.querySelector('#quit')!.addEventListener('click', () => { void bridge.request('quit').catch(showError); });
+function runShortcut(action: ShortcutAction): void {
+  if (busy()) return;
+  if (action === 'search') openSearch();
+  else if (action === 'export') void exportNote().catch(showError);
+  else {
+    const current = pages.findIndex(page => page.id === workspace.active?.pageID);
+    void selectPage(pages[(current + (action === 'next' ? 1 : 6)) % 7].id);
+  }
+}
 document.addEventListener('keydown', event => {
   if (event.defaultPrevented) return;
   if (document.querySelector('dialog[open]') || hotKeyRecording) return;
   if (event.isComposing || event.keyCode === 229 || workspace.active?.editor.view.composing) return;
   if (historyOpen || archiveBusy) { if (event.key === 'Escape' && surfaces.onBack) { event.preventDefault(); surfaces.back(); } return; }
-  if (event.metaKey && !event.altKey && !event.shiftKey && !event.ctrlKey && event.key.toLowerCase() === 'f') { event.preventDefault(); openSearch(); return; }
+  const shortcut = shortcutActions.find(action => matchesShortcut(event, settings.shortcuts[action.id]));
+  if (shortcut) { event.preventDefault(); runShortcut(shortcut.id); return; }
   if (event.key === 'Escape' && search.isOpen) { event.preventDefault(); search.close(); workspace.active?.editor.commands.focus(undefined, { scrollIntoView: false }); return; }
   if (event.metaKey && !event.altKey && !event.shiftKey && !event.ctrlKey && /^[1-7]$/.test(event.key)) { event.preventDefault(); void selectPage(pages[Number(event.key) - 1].id); }
-  if (event.metaKey && event.altKey && !event.shiftKey && !event.ctrlKey && ['ArrowLeft', 'ArrowRight'].includes(event.key)) {
-    event.preventDefault(); const current = pages.findIndex(page => page.id === workspace.active?.pageID);
-    void selectPage(pages[(current + (event.key === 'ArrowRight' ? 1 : 6)) % 7].id);
-  }
   if (event.key === 'Escape') {
     event.preventDefault(); const open = !!surfaces.current;
     if (open) surfaces.back(); else void bridge.request('hide').catch(showError);
@@ -416,11 +439,11 @@ bridge.onCommand = message => {
       }
     })();
   } else if (message.type === 'requestAppend') { quickAppend(); }
+  else if (message.type === 'requestPageStep') runShortcut(message.step === 1 ? 'next' : 'previous');
   else if (message.type === 'requestSearch') { openSearch(); }
   else if (message.type === 'requestSave') void saveNow().catch(showError);
-  else if (message.type === 'shortcutInfo') document.querySelector('#append-shortcut')!.textContent = String(message.appendShortcut);
   else if (message.type === 'hotKeyRecording') {
-    document.querySelector('#hotkey-message')!.textContent = '按下新组合键（含 ⌘、⌃ 或 ⌥），Esc 取消';
+    document.querySelector('#shortcut-message')!.textContent = '按下新组合键，Esc 取消';
   } else if (message.type === 'nativeSettings') {
     const native = message.settings as AppSettings;
     settings.pinned = native.pinned; settings.windowWidth = native.windowWidth; settings.windowHeight = native.windowHeight; settings.hotKey = native.hotKey; renderAppearance();
@@ -441,8 +464,10 @@ async function loadNote(): Promise<void> {
   try {
     const result = await bridge.request<LoadedPage & { settings?: AppSettings; hotKeyError?: string; appendShortcut?: string; floating?: boolean }>('ready');
     settings = { ...defaultSettings, ...result.settings }; renderAppearance(); renderWindowMode(result.floating === true);
-    document.querySelector('#hotkey-message')!.textContent = result.hotKeyError ?? '';
-    if (result.appendShortcut) document.querySelector('#append-shortcut')!.textContent = result.appendShortcut;
+    if (result.hotKeyError) {
+      const message = document.querySelector<HTMLElement>('#shortcut-message')!;
+      message.textContent = result.hotKeyError; message.dataset.error = 'true';
+    }
     await workspace.activate(settings.pageID, result);
     editingAvailable();
     void loadLoginStatus();
@@ -476,7 +501,6 @@ function quickAppend(): void {
   else workspace.active.editor.commands.focus(undefined, { scrollIntoView: false });
 }
 document.querySelector('#search-button')!.addEventListener('click', openSearch);
-document.querySelector('#append-button')!.addEventListener('click', quickAppend);
 document.querySelector('#completed-summary')!.addEventListener('click', () => togglePanel('completed-panel'));
 document.querySelector('#fold-completed')!.addEventListener('click', () => {
   if (busy() || workspace.active?.editor.view.composing) return; saveSettings({ hideCompleted: !settings.hideCompleted }); closePanels(); renderContent();
@@ -601,10 +625,14 @@ function scheduleDragRegion(): void {
     dragRegionQueued = false;
     const region = document.querySelector<HTMLElement>('#window-drag-region')!;
     const rect = region.getBoundingClientRect();
-    const visible = !region.hidden && !document.querySelector('.note-window')!.classList.contains('has-pane') && !surfaces.current;
-    const controls = Array.from(region.querySelectorAll<HTMLElement>('.toolbar-leading,.page-tabs,.toolbar-actions')).map(element => {
-      const box = element.getBoundingClientRect(); return { x: box.x, y: box.y, width: box.width, height: box.height };
-    });
+    const visible = !region.hidden && !document.querySelector('dialog[open]');
+    // 内容页位于工具栏下方；仅扣除真实控件与浮层，避免整页禁用拖动。
+    const controls = [...region.querySelectorAll<HTMLElement>('.toolbar-leading,.page-tabs,.toolbar-actions'),
+      ...document.querySelectorAll<HTMLElement>('.popover:not([hidden])')].map(element => {
+      const box = element.getBoundingClientRect();
+      const x = Math.max(rect.left, box.left), y = Math.max(rect.top, box.top);
+      return { x, y, width: Math.min(rect.right, box.right) - x, height: Math.min(rect.bottom, box.bottom) - y };
+    }).filter(box => box.width > 0 && box.height > 0);
     void bridge.request('windowDragRegion', visible ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height, controls } : null).catch(() => {});
   });
 }
@@ -612,5 +640,5 @@ if (typeof ResizeObserver !== 'undefined') new ResizeObserver(scheduleDragRegion
 new MutationObserver(scheduleDragRegion).observe(document.querySelector('.note-window')!, { attributes: true, attributeFilter: ['class'] });
 const previousSurfaceClose = surfaces.onClose;
 surfaces.onClose = id => { previousSurfaceClose?.(id); scheduleDragRegion(); };
-// 弹出菜单不改变窗口几何，也必须及时移除覆盖其上的原生热区。
-new MutationObserver(scheduleDragRegion).observe(document.querySelector('.note-window')!, { subtree: true, attributes: true, attributeFilter: ['hidden'] });
+// 浮层和模态框变化时同步热区，避免原生层拦截网页控件。
+new MutationObserver(scheduleDragRegion).observe(document.querySelector('.note-window')!, { subtree: true, attributes: true, attributeFilter: ['hidden', 'open'] });

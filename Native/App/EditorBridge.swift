@@ -31,6 +31,7 @@ import ServiceManagement
     var onPreviewSkin: ((String?) -> Void)?
     var onPageNames: (([String: String]) -> Void)?
     private var pendingArchive: (token: String, archive: WorkspaceArchive)?
+    var onShortcuts: (([String: HotKeySettings]) -> Void)?
     var onHotKey: ((HotKeySettings) throws -> Void)?
     var hotKeyError: String?
     var appendShortcut = "菜单栏右键 → 新建无格式正文"
@@ -306,7 +307,7 @@ import ServiceManagement
                     let data = try JSONSerialization.data(withJSONObject: body["payload"] ?? NSNull())
                     var next = try JSONDecoder().decode(AppSettings.self, from: data)
                     // 尺寸与快捷键由原生确认后保存，网页旧请求不能覆盖它们。
-                    next.windowWidth = settings.windowWidth; next.windowHeight = settings.windowHeight; next.hotKey = settings.hotKey
+                    next.windowWidth = settings.windowWidth; next.windowHeight = settings.windowHeight; next.hotKey = settings.hotKey; next.shortcuts = settings.shortcuts
                     try next.validate()
                     if next.pageNames != settings.pageNames { try await repository.savePageNames(next.pageNames) }
                     settings = next; onPageNames?(next.pageNames)
@@ -315,10 +316,21 @@ import ServiceManagement
                 case "recordHotKey":
                     let key = await hotKeyRecorder.record { self.send(["type": "hotKeyRecording"]) }
                     reply("recordHotKeyResult", id: id, payload: try key.map { try json($0) } ?? NSNull())
+                case "setShortcut":
+                    guard let payload = body["payload"] as? [String: Any], let action = payload["action"] as? String,
+                          AppShortcuts.defaults[action] != nil else { throw NoteError.invalidDocument }
+                    let key: HotKeySettings
+                    if payload["reset"] as? Bool == true { key = AppShortcuts.defaults[action]! }
+                    else { key = try JSONDecoder().decode(HotKeySettings.self, from: JSONSerialization.data(withJSONObject: payload["key"] ?? NSNull())) }
+                    var next = settings; next.shortcuts[action] = key; try next.validate()
+                    settings = next; try persistSettings(); onShortcuts?(settings.shortcuts)
+                    reply("shortcutResult", id: id, payload: try json(settings))
                 case "setHotKey":
                     let data = try JSONSerialization.data(withJSONObject: body["payload"] ?? NSNull())
                     let key = try JSONDecoder().decode(HotKeySettings.self, from: data)
                     guard let onHotKey else { throw NoteError.invalidDocument }
+                    try AppShortcuts.validateGlobal(key)
+                    try AppShortcuts.validate(settings.shortcuts, global: key)
                     try onHotKey(key)
                     settings.hotKey = key; hotKeyError = nil; try persistSettings()
                     reply("hotKeyResult", id: id, payload: try json(settings))
@@ -370,7 +382,7 @@ import ServiceManagement
     private func loginStatus() -> [String: Any] {
         if ProcessInfo.processInfo.environment["TOT_NOTES_DATA_DIR"] != nil { return ["enabled": false, "qa": true, "message": "隔离验收模式不修改系统开机启动项"] }
         let status = SMAppService.mainApp.status
-        let message = status == .requiresApproval ? "请在系统设置 → 通用 → 登录项中允许 Jot 启动" : status == .notFound ? "当前应用位置不支持开机启动" : ""
+        let message = status == .requiresApproval ? "请在系统设置 → 通用 → 登录项中允许 Jot 启动" : ""
         return ["enabled": status == .enabled || status == .requiresApproval, "message": message]
     }
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {

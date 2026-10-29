@@ -265,10 +265,10 @@ test('快捷键冲突保持旧显示并反馈原因', async () => {
       ok: message.type === 'recordHotKey', payload: { keyCode: 0, modifiers: 256, label: '⌘A' }, error: '快捷键已被占用' }));
     return true;
   });
-  document.querySelector<HTMLButtonElement>('#hotkey-button')!.click();
-  await vi.waitFor(() => expect(document.querySelector('#hotkey-message')?.textContent).toBe('快捷键已被占用'));
-  expect(document.querySelector('#hotkey-label')?.textContent).toBe('⌃⌥空格');
-  expect(document.querySelector<HTMLButtonElement>('#hotkey-button')!.disabled).toBe(false);
+  document.querySelector<HTMLButtonElement>('[data-shortcut="global"]')!.click();
+  await vi.waitFor(() => expect(document.querySelector('#shortcut-message')?.textContent).toBe('快捷键已被占用'));
+  expect(document.querySelector('[data-shortcut="global"]')?.textContent).toBe('⌃⌥空格');
+  expect(document.querySelector<HTMLButtonElement>('[data-shortcut="global"]')!.disabled).toBe(false);
 });
 
 test('快捷键录制等待期间正文只读，取消后恢复编辑且内容不变', async () => {
@@ -278,11 +278,11 @@ test('快捷键录制等待期间正文只读，取消后恢复编辑且内容�
     pending = message; return true;
   });
   editor.commands.insertContent('不能被录制按键替换');
-  document.querySelector<HTMLButtonElement>('#hotkey-button')!.click();
+  document.querySelector<HTMLButtonElement>('[data-shortcut="global"]')!.click();
   await vi.waitFor(() => expect(pending).toBeDefined());
   expect(editor.isEditable).toBe(false);
   window.totNotes.receive({ type: 'hotKeyRecording' });
-  expect(document.querySelector('#hotkey-message')?.textContent).toContain('按下新组合键');
+  expect(document.querySelector('#shortcut-message')?.textContent).toContain('按下新组合键');
   window.totNotes.receive({ type: 'result', requestID: pending!.requestID, ok: true, payload: null });
   await vi.waitFor(() => expect(editor.isEditable).toBe(true));
   expect(editor.getText()).toBe('不能被录制按键替换');
@@ -393,17 +393,16 @@ test('取消备份文件选择后结束等待提示并保留备份页', async ()
     if (message.type !== 'chooseArchive') return false;
     queueMicrotask(() => window.totNotes.receive({type:'result',requestID:message.requestID,ok:true,payload:null})); return true;
   });
-  document.querySelector<HTMLButtonElement>('#backup-button')!.click();
   document.querySelector<HTMLButtonElement>('#backup-import')!.click();
   await vi.waitFor(() => expect(document.querySelector('#backup-message')?.textContent).toBe(''));
   expect(document.querySelector<HTMLElement>('#backup-panel')!.hidden).toBe(false);
 });
 
-test('新建正文菜单与快捷键一致，在当前块后插入而非跳到整页末尾', async () => {
+test('原生新建正文命令在当前块后插入而非跳到整页末尾', async () => {
   const editor = await openNote();
   editor.commands.setContent('<blockquote><p>当前引用</p></blockquote><p>后面的内容</p>');
   editor.commands.setTextSelection(4);
-  document.querySelector<HTMLButtonElement>('#append-button')!.click();
+  window.totNotes.receive({ type: 'requestAppend' });
   editor.commands.insertContent('菜单新建正文');
   expect(editor.getJSON().content?.map(node=>node.type)).toEqual(['blockquote','paragraph','paragraph']);
   expect(editor.getJSON().content?.[1]).toEqual({type:'paragraph',content:[{type:'text',text:'菜单新建正文'}]});
@@ -433,15 +432,14 @@ test('切换皮肤和字体只保存外观设置，不改写正文或选区', as
   editor.commands.setContent({ type: 'doc', content: [{ type: 'blockquote', content: [{ type: 'paragraph', content: [{ type: 'text', text: '皮肤不能改写中文正文' }] }] }] });
   editor.commands.setTextSelection({ from: 3, to: 6 });
   const content = editor.getJSON(); const selection = editor.state.selection.toJSON();
-  const skin = document.querySelector<HTMLButtonElement>('[data-skin="cream"]');
+  const skin = document.querySelector<HTMLButtonElement>('[data-preview-skin="cream"]');
   expect(skin).not.toBeNull(); skin!.click();
   const font = document.querySelector<HTMLSelectElement>('#font-family')!;
   font.value = 'hand'; font.dispatchEvent(new Event('change'));
-  document.querySelector<HTMLInputElement>('#decorations-toggle')!.click();
-  await vi.waitFor(() => expect(saved.at(-1)).toMatchObject({ skin: 'cream', fontFamily: 'hand', decorations: false }));
+  await vi.waitFor(() => expect(saved.at(-1)).toMatchObject({ skin: 'cream', fontFamily: 'hand', decorations: true }));
   expect(editor.getJSON()).toEqual(content); expect(editor.state.selection.toJSON()).toEqual(selection);
-  document.querySelector<HTMLButtonElement>('#reset-appearance')!.click();
-  await vi.waitFor(() => expect(saved.at(-1)).toMatchObject({ skin: 'default', fontFamily: 'auto', decorations: true }));
+  document.querySelector<HTMLButtonElement>('[data-preview-skin="default"]')!.click();
+  await vi.waitFor(() => expect(saved.at(-1)).toMatchObject({ skin: 'default', fontFamily: 'hand', decorations: true }));
   expect(editor.getJSON()).toEqual(content);
 });
 
@@ -508,7 +506,7 @@ test('启动恢复置顶且动画帧暂停时仍报告热区，重新呼出时�
   } finally { frame.mockRestore(); bounds.mockRestore(); }
 });
 
-test('顶部热区排除控件，打开面板时撤销，取消置顶后仍可拖动且正文不变', async () => {
+test('顶部热区排除控件和浮层，打开菜单与取消置顶后仍可拖动且正文不变', async () => {
   const regions: unknown[] = [];
   const editor = await openNote(null, message => {
     if (message.type === 'windowDragRegion') regions.push(message.payload);
@@ -518,11 +516,15 @@ test('顶部热区排除控件，打开面板时撤销，取消置顶后仍可�
   const content = editor.getJSON();
   const region = document.querySelector<HTMLElement>('#window-drag-region')!;
   region.getBoundingClientRect = () => new DOMRect(180, 52, 100, 26);
+  region.querySelectorAll<HTMLElement>('.toolbar-leading,.page-tabs,.toolbar-actions').forEach((control,i)=>{ control.getBoundingClientRect=()=>new DOMRect(180+i*10,52,8,20); });
+  document.querySelector<HTMLElement>('#notes')!.getBoundingClientRect=()=>new DOMRect(200,60,120,300);
   document.querySelector<HTMLButtonElement>('#pin-button')!.click();
   await vi.waitFor(() => expect(regions.at(-1)).toEqual(expect.objectContaining({ x: 180, y: 52, width: 100, height: 26, controls: expect.any(Array) })));
   expect(region.hidden).toBe(false);
   document.querySelector<HTMLButtonElement>('#notes-button')!.click();
-  await vi.waitFor(() => expect(regions.at(-1)).toBeNull());
+  await vi.waitFor(() => expect(regions.at(-1)).toEqual(expect.objectContaining({ controls: expect.arrayContaining([expect.any(Object)]) })));
+  await vi.waitFor(() => expect((regions.at(-1) as {controls: unknown[]}).controls).toHaveLength(4));
+  expect((regions.at(-1) as {controls: unknown[]}).controls.at(-1)).toEqual({x:200,y:60,width:80,height:18});
   document.querySelector<HTMLButtonElement>('#notes-button')!.click();
   await vi.waitFor(() => expect(regions.at(-1)).not.toBeNull());
   document.querySelector<HTMLButtonElement>('#pin-button')!.click();
@@ -547,4 +549,81 @@ test('模式切换独立于置顶和正文，忙碌状态阻止重复点击且�
   document.querySelector<HTMLButtonElement>('#close')!.click();
   await vi.waitFor(() => expect(requests).toContain('hide'));
   expect(editor.getJSON()).toEqual(content);
+});
+
+
+test('所有内容页保留顶部拖动热区，模态确认时暂停并在关闭后恢复', async () => {
+  const regions: unknown[]=[];
+  await openNote(null,message=>{if(message.type==='windowDragRegion')regions.push(message.payload);return false;});
+  const toolbar=document.querySelector<HTMLElement>('#window-drag-region')!;
+  toolbar.getBoundingClientRect=()=>new DOMRect(0,0,480,52);
+  const {NoteSurfaces}=await import('../src/surfaces');const surfaces=new NoteSurfaces(()=>{});
+  for(const panel of document.querySelectorAll<HTMLElement>('.content-pane')) {
+    regions.length=0;surfaces.show(panel.id);
+    await vi.waitFor(()=>expect(regions.at(-1)).toEqual(expect.objectContaining({width:480,height:52})));
+  }
+  const dialog=document.querySelector<HTMLDialogElement>('#confirm-dialog')!;
+  dialog.setAttribute('open','');await vi.waitFor(()=>expect(regions.at(-1)).toBeNull());
+  dialog.removeAttribute('open');await vi.waitFor(()=>expect(regions.at(-1)).not.toBeNull());
+});
+
+
+test('修改查找快捷键同步提示，旧组合失效，新组合打开查找，恢复后还原', async () => {
+  const { defaultSettings } = await import('../src/pages');
+  let shortcuts = { ...defaultSettings.shortcuts };
+  await openNote(null, message => {
+    if (message.type !== 'recordHotKey' && message.type !== 'setShortcut') return false;
+    const payload = message.payload as { action: string; key: { keyCode: number; modifiers: number; label: string }; reset: boolean };
+    if (message.type === 'setShortcut') shortcuts = { ...shortcuts, [payload.action]: payload.key };
+    queueMicrotask(() => window.totNotes.receive({ type: 'result', requestID: message.requestID, ok: true,
+      payload: message.type === 'recordHotKey' ? { keyCode: 5, modifiers: 768, label: '⇧⌘G' } : { ...defaultSettings, shortcuts } }));
+    return true;
+  });
+  document.querySelector<HTMLButtonElement>('[data-shortcut="search"]')!.click();
+  await vi.waitFor(() => expect(document.querySelector('[data-shortcut="search"]')?.textContent).toBe('⇧⌘G'));
+  expect(document.querySelector('#search-button')?.getAttribute('title')).toContain('⇧⌘G');
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', code: 'KeyF', metaKey: true, bubbles: true }));
+  expect(document.querySelector<HTMLElement>('#search-panel')!.hidden).toBe(true);
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'G', code: 'KeyG', metaKey: true, shiftKey: true, bubbles: true }));
+  expect(document.querySelector<HTMLElement>('#search-panel')!.hidden).toBe(false);
+  document.querySelector<HTMLButtonElement>('[data-reset-shortcut="search"]')!.click();
+  await vi.waitFor(() => expect(document.querySelector('[data-shortcut="search"]')?.textContent).toBe('⌘F'));
+});
+
+test('应用快捷键被拒绝时保留原键，录制取消不改正文或配置', async () => {
+  let cancel = false;
+  const editor = await openNote(null, message => {
+    if (message.type !== 'recordHotKey' && message.type !== 'setShortcut') return false;
+    queueMicrotask(() => window.totNotes.receive({ type: 'result', requestID: message.requestID,
+      ok: message.type === 'recordHotKey', payload: cancel ? null : { keyCode: 0, modifiers: 256, label: '⌘A' }, error: '此组合为编辑保留键' }));
+    return true;
+  });
+  editor.commands.insertContent('原有正文');
+  document.querySelector<HTMLButtonElement>('[data-shortcut="search"]')!.click();
+  await vi.waitFor(() => expect(document.querySelector('#shortcut-message')?.textContent).toContain('保留键'));
+  expect(document.querySelector('[data-shortcut="search"]')?.textContent).toBe('⌘F');
+  cancel = true;
+  document.querySelector<HTMLButtonElement>('[data-shortcut="export"]')!.click();
+  await vi.waitFor(() => expect(document.querySelector('#shortcut-message')?.textContent).toContain('已取消'));
+  expect(editor.getText()).toBe('原有正文'); expect(editor.isEditable).toBe(true);
+});
+
+
+test('底栏快捷键入口可直接开关，从设置切入后返回正文并保持选区', async () => {
+  const editor = await openNote(); editor.commands.insertContent('快捷入口不影响正文'); editor.commands.setTextSelection({from:2,to:5});
+  const doc = editor.getJSON(), selection = editor.state.selection.toJSON();
+  const help = document.querySelector<HTMLButtonElement>('#help-button')!;
+  expect(help.closest('.footer-actions')).not.toBeNull();
+  help.focus(); help.click();
+  expect(document.querySelector<HTMLElement>('#help-panel')!.hidden).toBe(false);
+  expect(help.getAttribute('aria-expanded')).toBe('true');
+  help.click(); expect(document.querySelector<HTMLElement>('#help-panel')!.hidden).toBe(true);
+  document.querySelector<HTMLButtonElement>('#settings-button')!.click();
+  help.focus(); help.click();
+  expect(document.querySelector<HTMLElement>('#settings')!.hidden).toBe(true);
+  document.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape', bubbles:true}));
+  expect(document.querySelector<HTMLElement>('#help-panel')!.hidden).toBe(true);
+  expect(help.getAttribute('aria-expanded')).toBe('false'); expect(document.activeElement).toBe(help);
+  expect(editor.getJSON()).toEqual(doc); expect(editor.state.selection.toJSON()).toEqual(selection);
+  expect(document.querySelectorAll('#append-button,#backup-button,.skin-options,#decorations-toggle,#reset-appearance,#hotkey-button,#append-shortcut')).toHaveLength(0);
 });

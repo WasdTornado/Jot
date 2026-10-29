@@ -141,3 +141,13 @@ test('整套恢复先保存当前页，清掉旧页缓存；失败时原编辑�
   expect(old.editor.isDestroyed).toBe(true); expect(workspace.active!.editor.getText()).toBe('恢复页2');
   await workspace.activate('page-1'); expect(workspace.active!.editor.getText()).toBe('恢复页1');
 });
+test('滚动与框选只保存浏览位置，不显示正文保存中；实际输入仍提示保存', async () => {
+  const files=setup();await workspace.activate('page-1');
+  const session=workspace.active!;session.editor.commands.insertContent('测试正文');await workspace.flush();
+  const states:string[]=[];workspace.onStatus=s=>states.push(s);
+  const container=session.host.parentElement!;container.scrollTop=120;container.dispatchEvent(new Event('scroll'));
+  session.editor.commands.setTextSelection({from:1,to:3});await workspace.flush();
+  expect(states).not.toContain('dirty');expect(states).not.toContain('saving');
+  expect(files.get('page-1')?.selection).toEqual({anchor:1,head:3,scrollTop:120});
+  session.editor.commands.insertContent('修改');expect(states).toContain('dirty');await workspace.flush();expect(states).toContain('saving');
+});

@@ -103,7 +103,7 @@ import WebKit
         layoutDragHandle()
         let dark = window.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
         let solid = settings.reduceTransparency || NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
-        surface.setSolid(solid, dark: dark, skin: previewSkin ?? settings.skin)
+        surface.setSolid(solid, dark: dark, skin: previewSkin ?? settings.skin, pageID: settings.pageID)
         bridge.sendEnvironment(dark: dark, solid: solid)
     }
     func show(anchorProvider: @escaping () -> (rect: NSRect, screen: NSScreen)?) {
@@ -218,7 +218,7 @@ import WebKit
             placeFloating(dragStartFrame.offsetBy(dx: delta.x, dy: delta.y), persist: false); return
         }
         window.setFrame(requested, display: true)
-        overlay?.triangle(tip: dragTip, base: CGPoint(x: window.frame.minX + dragPointerX, y: window.frame.maxY - 11), halfWidth: 10, color: surface.paperColor)
+        overlay?.triangle(tip: dragTip, base: CGPoint(x: window.frame.minX + dragPointerX, y: window.frame.maxY - 11), halfWidth: 14, surface: surface)
         if WindowMotion.detached(delta) {
             placeFloating(window.frame); retractTriangle()
         }
@@ -234,7 +234,7 @@ import WebKit
             let x = self.dragStartFrame.minX + (from.minX - self.dragStartFrame.minX) * spring
             let y = self.dragStartFrame.minY + (from.minY - self.dragStartFrame.minY) * spring
             self.window.setFrameOrigin(CGPoint(x: x, y: y))
-            self.overlay?.triangle(tip: self.dragTip, base: CGPoint(x: x + self.dragPointerX, y: self.window.frame.maxY - 11), halfWidth: 10, color: self.surface.paperColor)
+            self.overlay?.triangle(tip: self.dragTip, base: CGPoint(x: x + self.dragPointerX, y: self.window.frame.maxY - 11), halfWidth: 14, surface: self.surface)
         }, completion: { [weak self] in self?.cancelMotion(); self?.updateAnchor() })
     }
     private func retractTriangle() {
@@ -248,7 +248,7 @@ import WebKit
                 let remaining = CGFloat(pow(1 - t, 3))
                 // 下半截直接画在便签自身的轮廓里，继续移动也不会和顶部脱离。
                 self.surface.pointerHeight = 10 * remaining
-                self.overlay?.triangle(tip: self.dragTip, base: CGPoint(x: self.dragTip.x, y: self.dragTip.y - 22 * remaining), halfWidth: 5 * remaining, color: self.surface.paperColor)
+                self.overlay?.triangle(tip: self.dragTip, base: CGPoint(x: self.dragTip.x, y: self.dragTip.y - 22 * remaining), halfWidth: 7 * remaining, surface: self.surface)
                 if t >= 1 {
                     timer.invalidate(); self.tearTimer = nil
                     self.surface.showsPointer = false; self.surface.pointerHeight = 10
@@ -282,20 +282,20 @@ import WebKit
         if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion { dock(); return }
         transitioning = true; sendWindowMode(); layoutDragHandle()
         let generation = motionGeneration
-        let source = window.frame; let color = surface.paperColor
+        let source = window.frame
         let config = WKSnapshotConfiguration(); config.rect = bridge.webView.bounds
         // 快照超时也能归位；迟到的回调不能重新显示已收起的窗口。
         runMotion(duration: 1.5, frame: { _ in }, completion: { [weak self] in self?.cancelMotion(); self?.dock() })
         bridge.webView.takeSnapshot(with: config) { [weak self] image, _ in
             guard let self, self.motionGeneration == generation, self.transitioning else { return }
             self.motionTimer?.invalidate(); self.motionTimer = nil
-            guard let image, let snapshot = self.paperSnapshot(image, color: color) else { self.cancelMotion(); self.dock(); return }
+            guard let image, let snapshot = self.paperSnapshot(image) else { self.cancelMotion(); self.dock(); return }
             let overlay = WindowMotionOverlay(level: self.window.level); self.overlay = overlay
             let size = CGSize(width: source.width, height: source.height - 10)
             let from = CGRect(origin: source.origin, size: size)
             let to = CGRect(origin: home.origin, size: size)
             let target = CGPoint(x: anchor.rect.midX, y: anchor.rect.minY + 2)
-            overlay.prepare(image: snapshot, size: size); overlay.genie(progress: 0, origin: from, target: target)
+            overlay.prepare(image: snapshot, size: size, surface: self.surface); overlay.genie(progress: 0, origin: from, target: target)
             self.window.alphaValue = 0; self.window.ignoresMouseEvents = true
             self.window.makeFirstResponder(self.dragHandle)
             var emerging = false
@@ -310,14 +310,21 @@ import WebKit
                 }
             }, completion: { [weak self] in
                 guard let self else { return }
-                // 先把真实窗口定位到快照终点，再移除视觉副本，避免一帧闪回旧位置。
+                // 先提交真实窗口的几何、模式与焦点，再渐退快照；不能同帧硬切两个合成窗口。
                 self.transitioning = false; self.dock()
-                self.cancelMotion(); self.window.makeFirstResponder(self.bridge.webView)
+                self.transitioning = true; self.layoutDragHandle()
+                self.window.makeFirstResponder(self.bridge.webView)
                 self.bridge.send(["type": "focusEditor"])
+                self.surface.layoutSubtreeIfNeeded(); self.window.displayIfNeeded()
+                self.window.alphaValue = 1
+                CATransaction.flush()
+                self.runMotion(duration: 0.18, frame: { t in overlay.setOpacity(1 - t * t * (3 - 2 * t)) }, completion: { [weak self] in
+                    self?.cancelMotion()
+                })
             })
         }
     }
-    private func paperSnapshot(_ image: NSImage, color: NSColor) -> CGImage? {
+    private func paperSnapshot(_ image: NSImage) -> CGImage? {
         let size = bridge.webView.bounds.size; let scale = window.backingScaleFactor
         guard let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(size.width * scale), pixelsHigh: Int(size.height * scale), bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
               let context = NSGraphicsContext(bitmapImageRep: bitmap) else { return nil }
@@ -325,7 +332,7 @@ import WebKit
         context.cgContext.scaleBy(x: scale, y: scale)
         let bounds = CGRect(origin: .zero, size: size)
         NSBezierPath(roundedRect: bounds, xRadius: 22, yRadius: 22).addClip()
-        color.setFill(); bounds.fill(); image.draw(in: bounds)
+        image.draw(in: bounds)
         NSGraphicsContext.restoreGraphicsState(); return bitmap.cgImage
     }
     private func runMotion(duration: Double, frame: @escaping (CGFloat) -> Void, completion: @escaping () -> Void) {
@@ -343,9 +350,12 @@ import WebKit
     private func cancelMotion() {
         motionGeneration += 1; motionTimer?.invalidate(); motionTimer = nil
         tearTimer?.invalidate(); tearTimer = nil
+        // 先提交真实窗口，再撤销覆盖层，避免两个画面之间出现空帧。
+        surface.layoutSubtreeIfNeeded(); window.displayIfNeeded()
+        window.alphaValue = 1; window.ignoresMouseEvents = false
+        CATransaction.flush()
         overlay?.close(); overlay = nil
         transitioning = false; dragging = false
-        window.alphaValue = 1; window.ignoresMouseEvents = false
         surface.pointerHeight = 10; surface.showsPointer = floatingFrame == nil
         layoutDragHandle(); sendWindowMode()
     }

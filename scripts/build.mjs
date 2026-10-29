@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
-const app = path.join(root, 'dist/Jot.app');
+const app = path.join(root, 'dist/Build.noindex/Jot.app');
 await rm(app, {recursive:true, force:true});
 const sparkle = await ensureSparkle();
 const contents = path.join(app, 'Contents');
