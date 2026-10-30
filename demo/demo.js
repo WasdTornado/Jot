@@ -48,7 +48,7 @@
         { id: "page-6", name: "\u968F\u60F3", color: "#438b98", dark: "#8ac1c9", rgb: "67,139,152" },
         { id: "page-7", name: "\u751F\u6D3B", color: "#758d5d", dark: "#b3c59a", rgb: "117,141,93" }
       ];
-      defaultSettings = { pageNames: {}, hideCompleted: false, pageID: "page-1", theme: "system", skin: "default", fontFamily: "auto", decorations: true, fontSize: 16, pinned: false, reduceTransparency: false, hotKey: { keyCode: 49, modifiers: 6144, label: "\u2303\u2325\u7A7A\u683C" }, shortcuts: defaultShortcuts, windowWidth: 480, windowHeight: 478 };
+      defaultSettings = { pageNames: {}, hideCompleted: false, pageID: "page-1", theme: "system", skin: "default", fontFamily: "auto", decorations: true, fontSize: 16, pinned: false, reduceTransparency: false, usageStatistics: true, hotKey: { keyCode: 49, modifiers: 6144, label: "\u2303\u2325\u7A7A\u683C" }, shortcuts: defaultShortcuts, windowWidth: 480, windowHeight: 478 };
     }
   });
 
@@ -26761,6 +26761,8 @@ ${prefix}
         load;
         persist;
         active;
+        onEdit = () => {
+        };
         onChange = () => {
         };
         onStatus = () => {
@@ -26831,7 +26833,10 @@ ${prefix}
             if (!session) return;
             session.revision++;
             session.coordinator.changed();
-            if (this.active === session) this.onChange();
+            if (this.active === session) {
+              this.onChange();
+              this.onEdit();
+            }
           };
           const editor = createNoteEditor(host, changed);
           editor.setEditable(false);
@@ -27445,6 +27450,7 @@ ${prefix}
     pin.setAttribute("aria-label", settings.pinned ? "\u53D6\u6D88\u7F6E\u9876" : "\u7F6E\u9876\u4FBF\u7B7E");
     pin.title = settings.pinned ? "\u53D6\u6D88\u7F6E\u9876" : "\u7F6E\u9876\u4FBF\u7B7E";
     document.querySelector("#solid-toggle").checked = settings.reduceTransparency;
+    document.querySelector("#usage-toggle").checked = settings.usageStatistics;
     document.querySelectorAll("[data-theme]").forEach((button) => {
       button.classList.toggle("selected", button.dataset.theme === settings.theme);
       button.setAttribute("aria-pressed", String(button.dataset.theme === settings.theme));
@@ -27479,6 +27485,12 @@ ${prefix}
       const active = !!session && formatActive(session.editor, button.dataset.format);
       button.setAttribute("aria-pressed", String(active));
       button.classList.toggle("selected", active);
+    });
+  }
+  function recordUsage() {
+    if (!settings.usageStatistics || initialLoading || Date.now() - lastUsageAttempt < 6e4) return;
+    lastUsageAttempt = Date.now();
+    void bridge.request("usageActivity").catch(() => {
     });
   }
   function renderSaveStatus() {
@@ -27797,7 +27809,7 @@ ${prefix}
       });
     });
   }
-  var status, retry, exportButton, hint, count, dragRegionQueued, windowMode, pin, tabs, bridge, settings, previewSkin, loadFailed, initialLoading, systemDark, systemSolid, preferenceQueue, preferenceError, preferenceRevision, exportInProgress, historyOpen, hotKeyRecording, archiveBusy, operationError, busy, pageOverviews, workspace, surfaces, undoCleanup, undoTimer, track, blockActions, blockIcons, editableShortcuts, search, previousSurfaceClose;
+  var status, retry, exportButton, hint, count, dragRegionQueued, windowMode, pin, tabs, bridge, settings, previewSkin, loadFailed, initialLoading, systemDark, systemSolid, preferenceQueue, preferenceError, preferenceRevision, exportInProgress, historyOpen, hotKeyRecording, archiveBusy, operationError, busy, pageOverviews, workspace, surfaces, undoCleanup, undoTimer, lastUsageAttempt, track, blockActions, blockIcons, editableShortcuts, search, previousSurfaceClose;
   var init_main = __esm({
     "Web/src/main.ts"() {
       "use strict";
@@ -27852,6 +27864,17 @@ ${prefix}
       );
       surfaces = new NoteSurfaces(() => workspace.active?.editor.commands.focus(void 0, { scrollIntoView: false }));
       workspace.onChange = renderContent;
+      lastUsageAttempt = 0;
+      workspace.onEdit = recordUsage;
+      document.querySelector("#editor").addEventListener("pointerdown", recordUsage);
+      document.querySelector("#usage-toggle").addEventListener("change", (event) => {
+        const input = event.target;
+        if (busy()) {
+          input.checked = settings.usageStatistics;
+          return;
+        }
+        saveSettings({ usageStatistics: input.checked });
+      });
       workspace.onStatus = renderSaveStatus;
       pages.forEach((page, index) => {
         const button = document.createElement("button");
@@ -28408,6 +28431,7 @@ ${prefix}
           notify("jot-demo-ready");
           reply();
           break;
+        case "usageActivity":
         case "checkpoint":
         case "windowDragRegion":
         case "previewSkin":
@@ -28440,6 +28464,8 @@ ${prefix}
         if (!button.disabled) button.disabled = true;
       }).observe(button, { attributes: true, attributeFilter: ["disabled"] });
     }
+    document.querySelector("#usage-toggle").disabled = true;
+    document.querySelector("#usage-hint").textContent = "\u7F51\u9875\u8BD5\u5199\u4E0D\u8BA1\u5165\u5E94\u7528\u6D3B\u8DC3\u7EDF\u8BA1\uFF1B\u6B64\u5F00\u5173\u4EC5\u5728 Mac \u5E94\u7528\u4E2D\u751F\u6548\u3002";
     const shortcutPanel = document.querySelector("#help-panel");
     const updateShortcuts = () => {
       shortcutPanel.querySelectorAll("[data-shortcut],.shortcut-reset,.shortcut-key").forEach((button) => {
