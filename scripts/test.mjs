@@ -9,6 +9,7 @@ const env = { ...process.env, DEVELOPER_DIR: process.env.DEVELOPER_DIR ?? '/Appl
 for (const [command, args] of [
   [node, ['Web/node_modules/typescript/bin/tsc', '--noEmit', '--project', 'Web/tsconfig.json']],
   [node, ['Web/node_modules/vitest/vitest.mjs', 'run', '--root', 'Web']],
+  [node, ['--test', 'Analytics/worker.test.mjs']],
   ['xcrun', ['swift', 'test']],
   [node, ['scripts/test-native-recovery.mjs']],
 ]) execFileSync(command, args, { cwd: root, env, stdio: 'inherit' });

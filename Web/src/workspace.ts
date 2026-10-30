@@ -10,6 +10,7 @@ export interface NoteSession {
 }
 export class NoteWorkspace {
   active?: NoteSession;
+  onEdit: () => void = () => {};
   onChange: () => void = () => {};
   onStatus: (status: SaveStatus, error?: string) => void = () => {};
   private sessions = new Map<string, NoteSession>();
@@ -70,7 +71,7 @@ export class NoteWorkspace {
     const changed = (): void => {
       if (!session) return;
       session.revision++; session.coordinator.changed();
-      if (this.active === session) this.onChange();
+      if (this.active === session) { this.onChange(); this.onEdit(); }
     };
     const editor = createNoteEditor(host, changed);
     editor.setEditable(false);

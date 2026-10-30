@@ -2,7 +2,7 @@
 
 按用户选定设计稿实现的 macOS 菜单栏便签。默认 480 × 468 pt 内容区（可拖动边缘调整并记忆）、七色分页、系统毛玻璃、浅深色、置顶、字号、本机自动保存与 Markdown 导出。运行保持菜单栏常驻，不显示 Dock 图标。
 
-开发产物位于 `dist/Build.noindex/Jot.app`，日常运行使用应用程序目录中的安装版。
+项目目录：`/Users/mac/Desktop/StudySpace/Jot`。开发产物位于 `dist/Build.noindex/Jot.app`，日常运行使用应用程序目录中的安装版。
 
 ## 直接使用
 
@@ -53,7 +53,11 @@
 需要完整 Xcode（含 macOS SDK、XCTest）、macOS 14+，开发依赖安装与测试使用 Node 24.15+。本机可直接使用现有的 Node 24.19.0，无需切换全局工具链。
 
 ```sh
-npm ci --prefix Web
+# 首次安装编辑器依赖：在 Web 目录运行 npm ci。
+# 本机的 npm 受 Volta 管理，应显式使用 Node 24 运行 npm CLI。
+/Users/mac/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node \
+  /Users/mac/.volta/tools/image/node/18.12.0/lib/node_modules/npm/bin/npm-cli.js \
+  ci --prefix Web --registry=https://registry.npmjs.org
 
 npm ci --prefix Assets/AppIcon
 node scripts/test.mjs
@@ -95,3 +99,7 @@ Tiptap 及其依赖的许可位于 `Web/node_modules/` 对应包内；本地构�
 编辑区启动失败会自动重建一次；持续失败可直接点击原生“重新加载编辑区”，无需退出应用。正常编辑中的内容不会被静默重载。内容进程退出后，已保存内容仍在本机，尚未送达保存的输入可能需要补录。
 
 正式品牌图标采用 **A「轻叠」**：柔和彩色叠卡与单色菜单栏轮廓。应用与官网共用 `Assets/AppIcon/Jot.svg` 原稿；资源生成方式见 [图标资源说明](Assets/AppIcon/README.md)。
+
+### 使用统计
+
+0.2.3 起支持匿名使用统计，可在「设置 → 隐私」关闭。只发送随机安装标识、北京时间日期、版本和事件类型，不发送正文、标题、搜索内容或文件路径；后台启动和检查更新不计活跃。官网仅汇总 DMG 按钮点击，尊重 DNT / GPC，不创建访客标识。网络失败不影响书写和保存，统计可能漏计。详见 [统计说明](Analytics/README.md)。

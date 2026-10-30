@@ -71,7 +71,11 @@ import Carbon
             let defaults = ["灵感", "工作", "日常", "阅读", "草稿", "随想", "生活"]
             for (index, item) in (self?.pageMenuItems ?? []).enumerated() { item.title = names[ids[index]] ?? defaults[index] }
         }
-        registerHotKey(); showNote()
+        registerHotKey()
+        let launch = NSAppleEventManager.shared().currentAppleEvent
+        let reason = launch?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue
+        let userOpened = launch?.eventID == kAEOpenApplication && reason != keyAELaunchedAsLogInItem && reason != keyAELaunchedAsServiceItem
+        presentNote(recordActivity: userOpened)
     }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         if terminationApproved { return .terminateNow }
@@ -121,7 +125,10 @@ import Carbon
     @objc func saveNote() { controller.bridge.send(["type": "requestSave"]) }
     @objc func exportNote() { controller.exportNote() }
     @objc func showNote() {
-        controller.show { [weak self] in
+        presentNote(recordActivity: true)
+    }
+    private func presentNote(recordActivity: Bool) {
+        controller.show(recordActivity: recordActivity) { [weak self] in
             guard let button = self?.statusItem?.button, let window = button.window, let screen = window.screen else { return nil }
             return (window.convertToScreen(button.convert(button.bounds, to: nil)), screen)
         }

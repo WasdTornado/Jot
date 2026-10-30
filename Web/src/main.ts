@@ -127,6 +127,7 @@ function renderAppearance(): void {
   pin.setAttribute('aria-label', settings.pinned ? '取消置顶' : '置顶便签'); pin.title = settings.pinned ? '取消置顶' : '置顶便签';
 
   document.querySelector<HTMLInputElement>('#solid-toggle')!.checked = settings.reduceTransparency;
+  document.querySelector<HTMLInputElement>('#usage-toggle')!.checked = settings.usageStatistics;
   document.querySelectorAll<HTMLButtonElement>('[data-theme]').forEach(button => {
     button.classList.toggle('selected', button.dataset.theme === settings.theme); button.setAttribute('aria-pressed', String(button.dataset.theme === settings.theme));
   });
@@ -159,6 +160,19 @@ function renderContent(): void {
   });
 }
 workspace.onChange = renderContent;
+let lastUsageAttempt = 0;
+function recordUsage(): void {
+  if (!settings.usageStatistics || initialLoading || Date.now() - lastUsageAttempt < 60_000) return;
+  lastUsageAttempt = Date.now();
+  void bridge.request('usageActivity').catch(() => {});
+}
+workspace.onEdit = recordUsage;
+document.querySelector('#editor')!.addEventListener('pointerdown', recordUsage);
+document.querySelector('#usage-toggle')!.addEventListener('change', event => {
+  const input = event.target as HTMLInputElement;
+  if (busy()) { input.checked = settings.usageStatistics; return; }
+  saveSettings({ usageStatistics: input.checked });
+});
 function renderSaveStatus(): void {
   const session = workspace.active;
   const state = session?.coordinator.status ?? 'saved';

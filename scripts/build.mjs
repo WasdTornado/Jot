@@ -1,3 +1,5 @@
+import { analyticsEndpoint } from './analytics-config.mjs';
+const statisticsEndpoint = analyticsEndpoint();
 import { ensureSparkle } from './sparkle.mjs';
 import { buildAppIcon } from './build-icons.mjs';
 import { build } from '../Web/node_modules/esbuild/lib/main.js';
@@ -42,6 +44,7 @@ await copyFile(path.join(root, 'Web/src/appearance.css'), path.join(resources, '
 // 字体与许可随应用离线打包，使用时不下载资源，也不注册系统字体。
 await cp(path.join(root, 'Web/assets'), path.join(resources, 'assets'), { recursive: true });
 await copyFile(path.join(root, 'Native/App/Info.plist'), path.join(contents, 'Info.plist'));
+if (statisticsEndpoint) execFileSync('plutil', ['-insert', 'JotAnalyticsURL', '-string', statisticsEndpoint, path.join(contents, 'Info.plist')]);
 await buildAppIcon(path.join(root, 'Assets/AppIcon/Jot.svg'), path.join(resources, 'JotLightStack.icns'));
 const sources = [];
 for (const dir of ['Native/Core', 'Native/App']) for (const name of await readdir(path.join(root, dir))) {

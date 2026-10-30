@@ -22,6 +22,11 @@ import ServiceManagement
 @MainActor final class EditorBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private(set) var webView: NoteWebView
     weak var window: NSWindow?
+    private lazy var usage = UsageStatistics(endpoint: Bundle.main.object(forInfoDictionaryKey: "JotAnalyticsURL").flatMap { ($0 as? String).flatMap(URL.init(string:)) }, version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0")
+    func recordUsage() {
+        usage.setEnabled(settings.usageStatistics && ProcessInfo.processInfo.environment["TOT_NOTES_DATA_DIR"] == nil)
+        usage.recordActivity()
+    }
     var onCheckForUpdates: (() -> Void)?
     var onHide: (() async -> Void)?
     var onSettings: (() -> Void)?
@@ -199,6 +204,9 @@ import ServiceManagement
             guard requestGeneration == loadGeneration || type == "save" else { return }
             do {
                 switch type {
+                case "usageActivity":
+                    if editorInitialized, window?.isVisible == true { recordUsage() }
+                    reply(type, id: id)
             case "checkForUpdates": onCheckForUpdates?(); reply(type, id: id)
                 case "ready":
                     webReady = true; startupTask?.cancel(); loadFailure = nil; onLoadState?(false,nil)
@@ -312,6 +320,7 @@ import ServiceManagement
                     if next.pageNames != settings.pageNames { try await repository.savePageNames(next.pageNames) }
                     settings = next; onPageNames?(next.pageNames)
                     try persistSettings()
+                    usage.setEnabled(settings.usageStatistics && ProcessInfo.processInfo.environment["TOT_NOTES_DATA_DIR"] == nil)
                     onSettings?(); reply("settingsResult", id: id, payload: try json(settings))
                 case "recordHotKey":
                     let key = await hotKeyRecorder.record { self.send(["type": "hotKeyRecording"]) }

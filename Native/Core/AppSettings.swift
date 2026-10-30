@@ -22,12 +22,13 @@ struct AppSettings: Codable, Equatable {
     var fontSize = 16
     var pinned = false
     var reduceTransparency = false
+    var usageStatistics = true
     var hotKey = HotKeySettings()
     var shortcuts = AppShortcuts.defaults
     var windowWidth = 480
     var windowHeight = 478
     init() { }
-    enum CodingKeys: String, CodingKey { case pageNames, hideCompleted, pageID, theme, skin, fontFamily, decorations, fontSize, pinned, reduceTransparency, hotKey, shortcuts, windowWidth, windowHeight }
+    enum CodingKeys: String, CodingKey { case pageNames, hideCompleted, pageID, theme, skin, fontFamily, decorations, fontSize, pinned, reduceTransparency, usageStatistics, hotKey, shortcuts, windowWidth, windowHeight }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         pageNames = try values.decodeIfPresent([String: String].self, forKey: .pageNames) ?? [:]
@@ -40,6 +41,7 @@ struct AppSettings: Codable, Equatable {
         fontSize = try values.decodeIfPresent(Int.self, forKey: .fontSize) ?? fontSize
         pinned = try values.decodeIfPresent(Bool.self, forKey: .pinned) ?? pinned
         reduceTransparency = try values.decodeIfPresent(Bool.self, forKey: .reduceTransparency) ?? reduceTransparency
+        usageStatistics = try values.decodeIfPresent(Bool.self, forKey: .usageStatistics) ?? usageStatistics
         hotKey = try values.decodeIfPresent(HotKeySettings.self, forKey: .hotKey) ?? hotKey
         shortcuts = try values.decodeIfPresent([String: HotKeySettings].self, forKey: .shortcuts) ?? shortcuts
         windowWidth = try values.decodeIfPresent(Int.self, forKey: .windowWidth) ?? windowWidth

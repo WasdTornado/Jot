@@ -106,8 +106,10 @@ import WebKit
         surface.setSolid(solid, dark: dark, skin: previewSkin ?? settings.skin, pageID: settings.pageID)
         bridge.sendEnvironment(dark: dark, solid: solid)
     }
-    func show(anchorProvider: @escaping () -> (rect: NSRect, screen: NSScreen)?) {
+    private var pendingUsageOpen = false
+    func show(recordActivity: Bool = false, anchorProvider: @escaping () -> (rect: NSRect, screen: NSScreen)?) {
         visibility.shown()
+        pendingUsageOpen = recordActivity
         self.anchorProvider = anchorProvider
         pendingPresentation = true; anchorDeadline = Date().addingTimeInterval(2)
         if anchorTimer == nil {
@@ -161,6 +163,7 @@ import WebKit
             pendingPresentation = false
             NSApp.activate(ignoringOtherApps: true); window.makeKeyAndOrderFront(nil)
             window.makeFirstResponder(bridge.webView); bridge.send(["type": "focusEditor"])
+            if pendingUsageOpen { pendingUsageOpen = false; bridge.recordUsage() }
         }
     }
     private func stopAnchorTracking() {

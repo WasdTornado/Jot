@@ -627,3 +627,20 @@ test('底栏快捷键入口可直接开关，从设置切入后返回正文并�
   expect(editor.getJSON()).toEqual(doc); expect(editor.state.selection.toJSON()).toEqual(selection);
   expect(document.querySelectorAll('#append-button,#backup-button,.skin-options,#decorations-toggle,#reset-appearance,#hotkey-button,#append-shortcut')).toHaveLength(0);
 });
+
+test('加载、滚动、光标移动不产生 DAU，编辑上报不带正文且可关闭', async () => {
+  const sent: Array<Record<string, any>> = [];
+  const editor = await openNote(null, message => { sent.push(message); return false; });
+  expect(sent.filter(message => message.type === 'usageActivity')).toHaveLength(0);
+  document.querySelector('#editor')!.dispatchEvent(new Event('scroll'));
+  editor.commands.setTextSelection(1);
+  expect(sent.filter(message => message.type === 'usageActivity')).toHaveLength(0);
+  editor.commands.insertContent('这段私人正文不得进入统计事件');
+  await vi.waitFor(() => expect(sent.filter(message => message.type === 'usageActivity')).toHaveLength(1));
+  expect(sent.find(message => message.type === 'usageActivity')?.payload).toBeUndefined();
+  const toggle = document.querySelector<HTMLInputElement>('#usage-toggle')!;
+  toggle.checked = false; toggle.dispatchEvent(new Event('change'));
+  await vi.waitFor(() => expect(sent.some(message => message.type === 'setSettings' && message.payload.usageStatistics === false)).toBe(true));
+  editor.commands.insertContent('关闭后继续编辑');
+  expect(sent.filter(message => message.type === 'usageActivity')).toHaveLength(1);
+});

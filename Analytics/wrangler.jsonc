@@ -1,0 +1,19 @@
+{
+	"name": "jot-statistics",
+	"main": "worker.mjs",
+	"compatibility_date": "2026-10-01",
+	"workers_dev": true,
+	"observability": {
+		"enabled": false
+	},
+	"vars": {
+		"ALLOWED_ORIGINS": "https://wasdtornado.github.io"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "jot-statistics",
+			"database_id": "0b985112-5d09-4318-8cd4-26e0e15108bf"
+		}
+	]
+}

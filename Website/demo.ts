@@ -27,7 +27,7 @@ window.webkit = {messageHandlers:{notes:{postMessage:raw => {
    case 'loginStatus': reply({enabled:false,qa:true,message:'登录后启动仅适用于 Mac 应用'}); break;
    case 'hide': case 'quit': document.body.classList.add('demo-hidden'); notify('jot-demo-hidden'); reply(); break;
    case 'editorReady': notify('jot-demo-ready'); reply(); break;
-   case 'checkpoint': case 'windowDragRegion': case 'previewSkin': reply(); break;
+   case 'usageActivity': case 'checkpoint': case 'windowDragRegion': case 'previewSkin': reply(); break;
    default: reply(undefined,'此功能需要在 Mac 应用中使用');
   }
  } catch(error) { reply(undefined,error instanceof Error ? error.message : '演示操作失败'); }
@@ -50,6 +50,8 @@ void import('../Web/src/main').then(() => {
   button.title='仅在 Mac 应用中可用';
   new MutationObserver(() => {if(!button.disabled) button.disabled=true;}).observe(button,{attributes:true,attributeFilter:['disabled']});
  }
+ document.querySelector<HTMLInputElement>('#usage-toggle')!.disabled=true;
+ document.querySelector('#usage-hint')!.textContent='网页试写不计入应用活跃统计；此开关仅在 Mac 应用中生效。';
  const shortcutPanel=document.querySelector('#help-panel')!;
  const updateShortcuts=() => {
   shortcutPanel.querySelectorAll<HTMLButtonElement>('[data-shortcut],.shortcut-reset,.shortcut-key').forEach(button => { button.disabled=true; button.title='快捷键修改仅在 Mac 应用中可用'; });
