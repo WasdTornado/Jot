@@ -3,14 +3,14 @@
     <channel>
         <title>Jot</title>
         <item>
-            <title>0.2.2</title>
-            <pubDate>Thu, 29 Oct 2026 23:39:50 +0800</pubDate>
-            <sparkle:version>6</sparkle:version>
-            <sparkle:shortVersionString>0.2.2</sparkle:shortVersionString>
+            <title>0.2.3</title>
+            <pubDate>Fri, 30 Oct 2026 19:39:39 +0800</pubDate>
+            <sparkle:version>7</sparkle:version>
+            <sparkle:shortVersionString>0.2.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Jot 0.2.2 · 更顺滑，更顺手</h2><ul><li>优化自由便签归位动画末尾的画面与阴影交接，减少闪动。</li><li>修复页签实心圆边缘，恢复默认主题随便签颜色变化。</li><li>统一主题强调色，改善毛玻璃、搜索、设置与快捷键界面。</li><li>优化鼠标框选的块状高亮，滚动位置保存不再打扰正文保存状态。</li><li>官网试写区与当前应用界面同步，新增直观的安装截图引导。</li></ul><p>macOS 14+，支持 Apple 芯片与 Intel。沿用原有本机便签与设置。首次打开若被系统拦截，请查看官网安装说明。</p>
+            <description><![CDATA[<h2>Jot 0.2.3 · 可关闭的匿名使用统计</h2><ul><li>新增每日活跃安装统计，同一安装每天只计一次，后台启动和检查更新不计入。</li><li>仅发送随机安装标识、日期、版本与事件类型，不发送正文、标题、搜索内容或文件路径。</li><li>可在「设置 → 隐私」关闭匿名使用统计，关闭后停止后续上报。</li><li>统计请求失败不影响编辑、自动保存和应用使用。</li></ul><p>macOS 14+，支持 Apple 芯片与 Intel。升级保留本机便签与设置。预览版首次打开若被系统拦截，请查看官网安装说明。</p>
 ]]></description>
-            <enclosure url="https://wasdtornado.github.io/Jot/downloads/Jot-0.2.2-preview.dmg" length="10506343" type="application/octet-stream" sparkle:edSignature="+5SHY5p39Hzk1vaZzk4uUMLn7Wq9twbmwtykLfGMZWVgB3gEFrXSbn8GLXwp14Cxh65z4Ig0kFyrq10ALtgzBQ=="/>
+            <enclosure url="https://wasdtornado.github.io/Jot/downloads/Jot-0.2.3-preview.dmg" length="10532255" type="application/octet-stream" sparkle:edSignature="61ooQN5gL4H4/klKnn4NENO+6/Gx4kmCKvxhP03I1iz/TTIgM4Y0XLcZuyj+bIZdEf7cg8jfh0MgvqSznokODQ=="/>
         </item>
     </channel>
 </rss>
